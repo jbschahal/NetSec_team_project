@@ -18,11 +18,12 @@ class Peep_Client(asyncio.Protocol):
                 if isinstance(packet, PEEP_Packet):
                     if (packet.Type == 1):
                         # received a synack
-                        if packet.Acknowledgement == self.sequence + 1:
-                            print("Received synack; sending ack")
-                            self.transport.write(PEEP_Packet(Type=2, SequenceNumber=packet.Acknowledgement, \
-                                                            Acknowledgement=packet.SequenceNumber+1))
-                            self.state = 2 # transmission state
+                        if (packet.Checksum == 0):
+                            if packet.Acknowledgement == self.sequence + 1:
+                                print("Received synack; sending ack")
+                                self.transport.write(PEEP_Packet(Type=2, SequenceNumber=packet.Acknowledgement, \
+                                    Acknowledgement=packet.SequenceNumber+1))
+                                self.state = 2 # transmission state
 
     def connection_made(self, transport):
         self.deserializer = PacketType.Deserializer()
