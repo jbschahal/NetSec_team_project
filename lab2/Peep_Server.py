@@ -26,16 +26,16 @@ class ServerProtocol(asyncio.Protocol):
 	def handle_packets(self,pkt):
 		if isinstance(pkt,PEEP_Packet):
 			typenum = pkt.Type
-			if typenum == 0:
+			if typenum == 0 and self.state == 0:
 				print('server side: received SYN')
 				self.handle_syn(pkt)
-			elif typenum == 2:
+			elif typenum == 2 and self.state == 1:
 				print('server side: received ACK')
 				self.handle_ack(pkt)
-			elif typenum == 3:
+			elif typenum == 3 and self.state == 2:
 				print('server side: received RIP')
 				self.handle_rip(pkt)
-			elif typenum == 4:
+			elif typenum == 4 and self.state == 2:
 				print('server side: received RIPACK')
 				self.handle_ripack(pkt)
 			else:
@@ -43,7 +43,7 @@ class ServerProtocol(asyncio.Protocol):
 		else:
 			print('server side:This packet is not the correct type')
 	def handle_syn(self,pkt):
-		if pkt.Checksum==0:
+		if pkt.Checksum == 0:
 			print('server side: checksum of SYN is correct')
 			pktback=PEEP_Packet()
 			pktback.Acknowledgement=pkt.SequenceNumber+1
@@ -64,7 +64,7 @@ class ServerProtocol(asyncio.Protocol):
 			self.transport.close()
 		
 	def handle_ack(self,pkt):
-		if pkt.Checksum==0:
+		if pkt.Checksum == 0:
 			print('server side: checksum of ACK is correct')
 			#send data
 			self.state+=1
@@ -79,7 +79,7 @@ class ServerProtocol(asyncio.Protocol):
 			print('server side: sent RST')
 
 	def handle_rip(self,pkt):
-		if pkt.Checksum==0:
+		if pkt.Checksum == 0:
 			print('server side: checksum of RIP is correct')
 			pktback=PEEP_Packet()
 			pktback.Acknowledgement=pkt.SequenceNumber+1
@@ -105,7 +105,7 @@ class ServerProtocol(asyncio.Protocol):
 			print('server side: sent RST')
 
 	def handle_ripack(self,pkt):
-		if pkt.Checksum==0:
+		if pkt.Checksum == 0:
 			print('server side: checksum of RIPACK is correct')
 			self.transport.close()
 		else:
