@@ -1,6 +1,6 @@
 import asyncio
 import random
-import PEEP_Packet
+from peep_packets import PEEP_Packet
 from playground.network.packet import PacketType
 
 class Peep_Client(asyncio.Protocol):
@@ -19,16 +19,17 @@ class Peep_Client(asyncio.Protocol):
                     if (packet.Type == 1):
                         # received a synack
                         if (packet.Checksum == 0):
-                            if packet.Acknowledgement == self.sequence + 1:
+                            if packet.Acknowledgement == self.sequence_number + 1:
                                 print("Received synack; sending ack")
                                 self.transport.write(PEEP_Packet(Type=2, SequenceNumber=packet.Acknowledgement, \
-                                    Acknowledgement=packet.SequenceNumber+1))
+                                    Acknowledgement=packet.SequenceNumber+1, Checksum = 0).__serialize__())
                                 self.state = 2 # transmission state
 
     def connection_made(self, transport):
+        print("client connection made")
         self.deserializer = PacketType.Deserializer()
         self.transport = transport
-        self.start_handshake()
+        #self.start_handshake()
 
     def connection_lost(self):
         self.transport = None
@@ -36,5 +37,6 @@ class Peep_Client(asyncio.Protocol):
     def start_handshake(self):
         self.sequence_number = random.randint(0,1000)
         print("Client start handshake")
-        self.transport.write(PEEP_Packet(Type=0, SequenceNumber=self.sequence_number, Checksum=0))
+        self.transport.write(PEEP_Packet(Type=0, SequenceNumber=self.sequence_number, Checksum=0).__serialize__())
         self.state = 1
+
