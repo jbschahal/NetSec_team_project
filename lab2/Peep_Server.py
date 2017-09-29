@@ -1,10 +1,10 @@
 import asyncio
 from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT32, STRING
-from peep_packets import PEEP_Packet
+from Peep_Packets import PEEP_Packet
 from random import randint
 
-class ServerProtocol(asyncio.Protocol):
+class PEEP_Server(asyncio.Protocol):
     def __init__(self):
         self.received=0
         self.transport=None
@@ -112,23 +112,3 @@ class ServerProtocol(asyncio.Protocol):
             print('server side: checksum of RIPACK is incorrect')
             self.transport.close()
 
-#loop = asyncio.get_event_loop()
-## Each client connection will create a new protocol instance
-#coro = loop.create_server(ServerProtocol, '127.0.0.1', 9997)
-#server = loop.run_until_complete(coro)
-#
-## Serve requests until Ctrl+C is pressed
-#print('Serving on {}'.format(server.sockets[0].getsockname()))
-#try:
-#    loop.run_forever()
-#except KeyboardInterrupt:
-#    pass
-#
-#
-## Close the server
-#server.close()
-#loop.run_until_complete(server.wait_closed())
-#loop.close()
-#
-#
-#

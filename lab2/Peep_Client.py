@@ -1,9 +1,9 @@
 import asyncio
 import random
-from peep_packets import PEEP_Packet
+from Peep_Packets import PEEP_Packet
 from playground.network.packet import PacketType
 
-class Peep_Client(asyncio.Protocol):
+class PEEP_Client(asyncio.Protocol):
 
     def __init__(self):
         self.transport = None

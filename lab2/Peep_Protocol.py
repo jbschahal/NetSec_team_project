@@ -1,10 +1,10 @@
 import asyncio
 import playground
 import sys
-from Peep_Server import ServerProtocol
-from Peep_Client import Peep_Client
+from Peep_Server import PEEP_Server
+from Peep_Client import PEEP_Client
 
-USAGE = """usage: echotest <mode>
+USAGE = """usage: Peep_Protocol <mode>
   mode is either 'server' or 'client as a.b.c.d playground address'"""
 
 if __name__ == "__main__":
@@ -13,7 +13,7 @@ if __name__ == "__main__":
         print(USAGE)
     elif args[0] == 'server':
         loop = asyncio.get_event_loop()
-        coro = playground.getConnector().create_playground_server(ServerProtocol,
+        coro = playground.getConnector().create_playground_server(PEEP_Server,
                                     8888)
         server = loop.run_until_complete(coro)
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         loop.close()
     else:
         loop = asyncio.get_event_loop()
-        coro = playground.getConnector().create_playground_connection(Peep_Client,
+        coro = playground.getConnector().create_playground_connection(PEEP_Client,
                                     args[0], 8888)
         socket, client_proto = loop.run_until_complete(coro)
         client_proto.start_handshake()
