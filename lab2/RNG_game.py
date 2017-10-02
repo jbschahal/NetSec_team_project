@@ -2,7 +2,7 @@ import asyncio
 import playground
 import sys
 from submission import PassThrough1, PassThrough2
-from RNG_game_protocol import RandomNumberGameServerProtocol,\
+from .RNG_game_protocol import RandomNumberGameServerProtocol,\
     RandomNumberGameClientProtocol
 from playground.network.common import StackingProtocolFactory
 

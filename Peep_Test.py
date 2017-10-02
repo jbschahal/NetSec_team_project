@@ -1,9 +1,10 @@
 import asyncio
 import playground
 import sys
+import lab2
 from playground.network.common import StackingProtocolFactory
-from Peep_Passthrough import PEEP_1a, PEEP_1b, clientFactory, serverFactory
-from RNG_game_protocol import RandomNumberGameServerProtocol, RandomNumberGameClientProtocol
+from lab2.Peep_Passthrough import PEEP_1a, PEEP_1b, clientFactory, serverFactory
+from lab2.RNG_game_protocol import RandomNumberGameServerProtocol, RandomNumberGameClientProtocol
 
 USAGE = """usage: Peep_Test <mode>
   mode is either 'server' or 'client as a.b.c.d playground address'"""
@@ -13,12 +14,9 @@ if __name__ == "__main__":
     if len(args) != 1:
         print(USAGE)
     elif args[0] == 'server':
-        ptConnector = playground.Connector(protocolStack= (clientFactory, serverFactory))
-        playground.setConnector("peep_pt", ptConnector)
-
         loop = asyncio.get_event_loop()
         loop.set_debug(enabled=True)
-        coro = playground.getConnector("peep_pt").create_playground_server(RandomNumberGameServerProtocol, 8888)
+        coro = playground.getConnector("lab2_protocol").create_playground_server(RandomNumberGameServerProtocol, 8888)
 
         server = loop.run_until_complete(coro)
 
@@ -32,12 +30,9 @@ if __name__ == "__main__":
         loop.run_until_complete(server.wait_closed())
         loop.close()
     else:
-        ptConnector = playground.Connector(protocolStack= (clientFactory, serverFactory))
-        playground.setConnector("peep_pt", ptConnector)
-
         loop = asyncio.get_event_loop()
         loop.set_debug(enabled=True)
-        coro = playground.getConnector("peep_pt").create_playground_connection(lambda: RandomNumberGameClientProtocol(loop), args[0], 8888)
+        coro = playground.getConnector("lab2_protocol").create_playground_connection(lambda: RandomNumberGameClientProtocol(loop), args[0], 8888)
 
         socket, client_proto = loop.run_until_complete(coro)
         loop.run_forever()

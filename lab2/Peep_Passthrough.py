@@ -1,7 +1,7 @@
 import asyncio
 import random
 import playground
-from Peep_Packets import PEEP_Packet
+from .Peep_Packets import PEEP_Packet
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
 from playground.network.packet import PacketType
 
@@ -15,10 +15,10 @@ class PEEP_1a(StackingProtocol):
     def data_received(self, data):
         print("peep1a: data received")
         self.deserializer.update(data)
-        if self.state == 1:
-            # expecting a synack
-            for packet in self.deserializer.nextPackets():
-                if isinstance(packet, PEEP_Packet):
+        for packet in self.deserializer.nextPackets():
+            if isinstance(packet, PEEP_Packet):
+                if self.state == 1:
+                    # expecting a synack
                     if (packet.Type == 1):
                         # received a synack
                         if packet.verifyChecksum() and packet.Acknowledgement == self.sequence_number + 1:
@@ -30,17 +30,17 @@ class PEEP_1a(StackingProtocol):
                             packet_to_send.updateChecksum()
                             print("peep1a: Sending Back Ack")
                             self.transport.write(packet_to_send.__serialize__())
-                            self.state = 2 # transmission state
+                            self.state = 6 # transmission state
                             # Open upper layer transport
                             print("peep1a: connection_made to higher protocol")
                             self.higherProtocol().connection_made(self.transport)
                         else:
                             self.transport.close()
-        elif self.state == 2:
-            # expecting a message packet
-            print("peep1a: Message data received")
-            if self.higherProtocolConnectionMade == True:
-                self.higherProtocol().data_received(data)
+                elif self.state == 6:
+                    # expecting a message packet
+                    if packet.Type == 6:
+                        print("peep1a: Message data received")
+                        self.higherProtocol().data_received(packet.Data)
 
     def connection_made(self, transport):
         self.transport = StackingTransport(transport)
@@ -96,6 +96,9 @@ class PEEP_1b(StackingProtocol):
             elif typenum == 4 and self.state == 2:
                 print('peep1b: received RIPACK')
                 self.handle_ripack(pkt)
+            elif typenum == 6 and self.state == 3:
+                print('peep1b: received Data packet')
+                self.handle_data(pkt)
             else:
                 # handle data packets?
                 print('peep1b: received UNKNOWN TYPE')
@@ -141,6 +144,13 @@ class PEEP_1b(StackingProtocol):
             self.transport.close()
             print('peep1b: sent RST')
 
+    def handle_data(self, pkt):
+        if pkt.verifyChecksum():
+            print('peep1b: checksum of data is correct')
+            self.higherProtocol().data_received(pkt.Data)
+        else:
+            print("pee1b: checksum of data is incorrect")
+
     def handle_rip(self,pkt):
         if pkt.verifyChecksum():
             print('peep1b: checksum of RIP is correct')
@@ -183,6 +193,12 @@ class PEEP_1b(StackingProtocol):
             #    self.higherProtocol().transport.close()
             #    self.higherProtocolConnectionMade = False
             self.transport.close()
+
+class PEEP_transport1a(StackingTransport):
+    pass
+
+class PEEP_transport1b(StackingTransport):
+    pass
 
 clientFactory = StackingProtocolFactory(PEEP_1a)
 serverFactory = StackingProtocolFactory(PEEP_1b)
