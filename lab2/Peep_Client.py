@@ -55,13 +55,18 @@ class PEEP_Passthrough1(StackingProtocol):
                     if (packet.Type == 1):
                         # received a synack
                         if (packet.verifyChecksum()):
+                            ##Check for wrong packets -------
                             if packet.Acknowledgement == self.sequence_number + 1:
                                 print("Received synack")
                                 self.higherProtocol().connection_made(StackingTransport(self.transport))
                                 print("connection_made to higher protocol: Middle layer")
                                 print("Sending Back Ack")
-                                self.transport.write(PEEP_Packet(Type=2, SequenceNumber=packet.Acknowledgement, \
-                                    Acknowledgement=packet.SequenceNumber+1, Checksum = 0).__serialize__())
+                                packet_to_send = PEEP_Packet()
+                                packet_to_send.Type = 2
+                                packet_to_send.SequenceNumber = packet.Acknowledgement
+                                packet_to_send.Acknowledgement= packet.SequenceNumber+1
+                                packet_to_send.updateChecksum()
+                                self.transport.write(packet_to_send.__serialize__())
                                 self.state = 2 # transmission state
         elif self.state == 2:
             #expecting a message packet
@@ -78,5 +83,9 @@ class PEEP_Passthrough1(StackingProtocol):
     def start_handshake(self):
         self.sequence_number = random.randint(0,1000)
         print("Client start handshake")
-        self.transport.write(PEEP_Packet(Type=0, SequenceNumber=self.sequence_number, Checksum=0).__serialize__())
+        packet = PEEP_Packet()
+        packet.Type = self.state
+        packet.SequenceNumber = self.sequence_number
+        packet.updateChecksum()
+        self.transport.write(packet.__serialize__())
         self.state = 1
