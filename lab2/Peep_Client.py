@@ -27,7 +27,7 @@ class PEEP_Client(asyncio.Protocol):
     def connection_lost(self):
         self.transport = None
 
-class client_passthrough_middle(StackingProtocol):
+class PEEP_Passthrough2(StackingProtocol):
     def __init__(self):
         self.transport = None
 
@@ -40,7 +40,7 @@ class client_passthrough_middle(StackingProtocol):
     def data_received(self, data):
         self.higherProtocol().data_received(data)
 
-class client_passthrough_lower(StackingProtocol):
+class PEEP_Passthrough1(StackingProtocol):
     def __init__(self):
         self.transport = None
         self.state = 0
@@ -54,7 +54,7 @@ class client_passthrough_lower(StackingProtocol):
                 if isinstance(packet, PEEP_Packet):
                     if (packet.Type == 1):
                         # received a synack
-                        if (packet.Checksum == 0):
+                        if (packet.verifyChecksum()):
                             if packet.Acknowledgement == self.sequence_number + 1:
                                 print("Received synack")
                                 self.higherProtocol().connection_made(StackingTransport(self.transport))
