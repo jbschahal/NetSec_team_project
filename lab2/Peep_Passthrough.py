@@ -13,6 +13,7 @@ class PEEP_1a(StackingProtocol):
         self.deserializer = None
 
     def data_received(self, data):
+        print("peep1a: data received")
         self.deserializer.update(data)
         if self.state == 1:
             # expecting a synack
@@ -75,6 +76,7 @@ class PEEP_1b(StackingProtocol):
         print('server(prepare)-->client(prepare):Connection from {}'.format(peername))
 
     def data_received(self,data):
+        print("peep1b: data received")
         self.deserializer.update(data)
         for pkt in self.deserializer.nextPackets():
             self.handle_packets(pkt)

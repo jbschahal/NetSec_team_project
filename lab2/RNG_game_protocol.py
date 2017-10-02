@@ -86,6 +86,7 @@ class RandomNumberGameClientProtocol(asyncio.Protocol):
         print("Client has connected to the server")
         self.transport = transport
         self.Deserializer = PacketType.Deserializer()
+        self.initiate_game(random.randint(0,9))
         # send a game request
 
     def connection_lost(self, exc):

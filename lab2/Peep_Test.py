@@ -5,7 +5,7 @@ from playground.network.common import StackingProtocolFactory
 from Peep_Passthrough import PEEP_1a, PEEP_1b, clientFactory, serverFactory
 from RNG_game_protocol import RandomNumberGameServerProtocol, RandomNumberGameClientProtocol
 
-USAGE = """usage: Peep_Protocol <mode>
+USAGE = """usage: Peep_Test <mode>
   mode is either 'server' or 'client as a.b.c.d playground address'"""
 
 if __name__ == "__main__":
@@ -32,6 +32,8 @@ if __name__ == "__main__":
         loop.run_until_complete(server.wait_closed())
         loop.close()
     else:
+        ptConnector = playground.Connector(protocolStack= (clientFactory, serverFactory))
+        playground.setConnector("peep_pt", ptConnector)
 
         loop = asyncio.get_event_loop()
         loop.set_debug(enabled=True)
