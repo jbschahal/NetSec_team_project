@@ -2,7 +2,7 @@ import asyncio
 import playground
 import sys
 from playground.network.common import StackingProtocolFactory
-from Peep_Client import PEEP_1a, PEEP_1b
+from Peep_Passthrough import PEEP_1a, PEEP_1b
 from RNG_game_protocol import RandomNumberGameServerProtocol, RandomNumberGameClientProtocol
 
 USAGE = """usage: Peep_Protocol <mode>
