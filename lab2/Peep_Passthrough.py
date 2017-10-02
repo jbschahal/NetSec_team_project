@@ -181,3 +181,6 @@ class PEEP_1b(StackingProtocol):
             #    self.higherProtocol().transport.close()
             #    self.higherProtocolConnectionMade = False
             self.transport.close()
+
+clientFactory = StackingProtocolFactory(PEEP_1a)
+serverFactory = StackingProtocolFactory(PEEP_1b)

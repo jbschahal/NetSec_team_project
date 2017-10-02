@@ -9,6 +9,16 @@ class PEEP_Packet(PacketType):
     DEFINITION_IDENTIFIER = "PEEP-Packet"
     DEFINITION_VERSION = "1.0"
 
+    """
+    Types:
+        0 - SYN
+        1 - SYNACK
+        2 - ACK
+        3 - RIP
+        4 - RIP-ACK
+        5 - RST
+        6 - Data
+    """
     FIELDS = [
         ("Type", UINT8),
         ("SequenceNumber", UINT32({Optional: "True"})),
