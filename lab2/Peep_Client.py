@@ -1,10 +1,10 @@
 import asyncio
 import random
 import playground
-from Peep_Packets import PEEP_Packet
-from playground.network.packet import PacketType
 from PassingThroughProtocols import FirstPassingThroughProtocol, SecondPassingThroughProtocol
+from Peep_Packets import PEEP_Packet
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
+from playground.network.packet import PacketType
 
 class PEEP_Client(StackingProtocol):
     def __init__(self):
@@ -17,43 +17,47 @@ class PEEP_Client(StackingProtocol):
     def data_received(self, data):
         if self.state == 1:
             # expecting a synack
+            self.deserializer = PacketType.Deserializer()
             self.deserializer.update(data)
             for packet in self.deserializer.nextPackets():
                 if isinstance(packet, PEEP_Packet):
                     if (packet.Type == 1):
                         # received a synack
-                        if (packet.verifyChecksum()):
+                        if (packet.verifyChecksum()) and packet.Acknowledgement == self.sequence_number + 1:
+                            print("Received synack")
+                            print("connection_made to higher protocol: Middle layer")
+                            print("Sending Back Ack")
+                            packet_to_send = PEEP_Packet()
+                            packet_to_send.Type = 2
+                            packet_to_send.SequenceNumber = packet.Acknowledgement
+                            packet_to_send.Acknowledgement= packet.SequenceNumber+1
+                            packet_to_send.updateChecksum()
+                            self.transport.write(packet_to_send.__serialize__())
+                            self.state = 2 # transmission state
+                            # Open upper layer transport
                             higherTransport = StackingTransport(self.transport)
                             self.higherProtocol().connection_made(higherTransport)
                             self.higherProtocolConnectionMade = True
-
-                            if packet.Acknowledgement == self.sequence_number + 1:
-                                print("Received synack")
-                                print("connection_made to higher protocol: Middle layer")
-                                print("Sending Back Ack")
-                                packet_to_send = PEEP_Packet()
-                                packet_to_send.Type = 2
-                                packet_to_send.SequenceNumber = packet.Acknowledgement
-                                packet_to_send.Acknowledgement= packet.SequenceNumber+1
-                                packet_to_send.updateChecksum()
-                                self.transport.write(packet_to_send.__serialize__())
-                                self.state = 2 # transmission state
+                        else:
+                            if self.higherProtocolConnectionMade == True:
+                                self.higherProtocol().transport.close()
+                                self.higherProtocolConnectionMade = False
+                            self.transport.close()
         elif self.state == 2:
-            #expecting a message packet
+            # expecting a message packet
             print("Message data received")
-            self.higherProtocol().data_received(data)
+            if self.higherProtocolConnectionMade == True:
+                self.higherProtocol().data_received(data)
 
     def connection_made(self, transport):
         self.transport = transport
-        self.deserializer = PacketType.Deserializer()
         self.start_handshake()
-        if self.higherProtocolConnectionMade == True:
-            self.higherProtocol().data_received(data)
 
     def connection_lost(self, exc):
-        self.transport = None 
         if self.higherProtocolConnectionMade == True:
             self.higherProtocol().connection_lost(exc)
+            self.higherProtocolConnectionMade = False
+        self.transport = None 
 
     def start_handshake(self):
         self.sequence_number = random.randint(0,1000)
