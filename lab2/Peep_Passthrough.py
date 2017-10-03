@@ -6,10 +6,21 @@ from playground.network.common import StackingProtocol, StackingTransport, Stack
 from playground.network.packet import PacketType
 
 class PEEP_1a(StackingProtocol):
+
+    """
+    State Definitions:
+        0 - INIT:  we haven't done anything.
+        1 - HANDSHAKE: we sent an syn and waiting for server to respond
+        2 - TRANS: data transmission. we can also send a rip from this state
+        3 - TEARDOWN: we received a RIP from the server. send rip ack and close.
+    """
+
+    INIT, HANDSHAKE, TRANS, TEARDOWN = [0,1,2,3]
+
     def __init__(self):
         super().__init__()
         self.transport = None
-        self.state = 0
+        self.state = PEEP_1a.INIT
         self.deserializer = None
 
     def data_received(self, data):
@@ -17,28 +28,29 @@ class PEEP_1a(StackingProtocol):
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
             if isinstance(packet, PEEPPacket):
-                if self.state == 1:
+                if self.state == PEEP_1a.HANDSHAKE:
                     # expecting a synack
-                    if (packet.Type == 1):
+                    if (packet.Type == PEEPPacket.SYNACK):
                         # received a synack
                         if packet.verifyChecksum() and packet.Acknowledgement == self.sequence_number + 1:
                             print("peep1a: Received synack")
                             packet_to_send = PEEPPacket()
-                            packet_to_send.Type = 2
+                            packet_to_send.Type = PEEPPacket.ACK
                             packet_to_send.SequenceNumber = packet.Acknowledgement
                             packet_to_send.Acknowledgement= packet.SequenceNumber+1
                             packet_to_send.updateChecksum()
                             print("peep1a: Sending Back Ack")
                             self.transport.write(packet_to_send.__serialize__())
-                            self.state = 2 # transmission state
+                            self.state = PEEP_1a.TRANS # transmission state
                             # Open upper layer transport
                             print("peep1a: connection_made to higher protocol")
                             self.higherProtocol().connection_made(PEEP_transport1a(self.transport, self))
                         else:
                             self.transport.close()
-                elif self.state == 2:
+                elif self.state == PEEP_1a.TRANS:
                     # expecting a message packet
-                    if packet.Type == 5:
+                    # TODO: if checksum bad, then don't respond
+                    if packet.Type == PEEPPacket.DATA:
                         print("peep1a: Message data received")
                         self.higherProtocol().data_received(packet.Data)
 
@@ -59,14 +71,25 @@ class PEEP_1a(StackingProtocol):
         packet.SequenceNumber = self.sequence_number
         packet.updateChecksum()
         self.transport.write(packet.__serialize__())
-        self.state = 1
+        self.state = PEEP_1a.HANDSHAKE
 
 class PEEP_1b(StackingProtocol):
+
+    """
+    State Definitions:
+        0 - INIT: we have not received any connections
+        1 - HANDSHAKE: we received a syn and sent a synack. waiting for ack
+        2 - TRANS: getting data
+        3 - TEARDOWN: received a rip, sent rip ack; sent a rip, waiting for ripack
+    """
+
+    INIT, HANDSHAKE, TRANS, TEARDOWN = [0,1,2,3]
+
     def __init__(self):
         super().__init__()
         self.transport = None
         self.deserializer = None
-        self.state = 0
+        self.state = PEEP_1b.INIT
 
     def connection_made(self,transport):
         print("peep1b: connection made")
@@ -85,26 +108,23 @@ class PEEP_1b(StackingProtocol):
     def handle_packets(self,pkt):
         if isinstance(pkt, PEEPPacket):
             typenum = pkt.Type
-            if typenum == 0 and self.state == 0:
+            if typenum == PEEPPacket.SYN and self.state == PEEP_1b.INIT:
                 print('peep1b: received SYN')
                 self.handle_syn(pkt)
-            elif typenum == 2 and self.state == 1:
+            elif typenum == PEEPPacket.ACK and self.state == PEEP_1b.HANDSHAKE:
                 print('peep1b: received ACK')
                 self.handle_ack(pkt)
-            elif typenum == 3 and self.state == 2:
+            elif typenum == PEEPPacket.RIP and self.state == PEEP_1b.TRANS:
                 print('peep1b: received RIP')
                 self.handle_rip(pkt)
-            elif typenum == 4 and self.state == 2:
+            elif typenum == PEEPPacket.RIPACK and self.state == PEEP_1b.TEARDOWN:
                 print('peep1b: received RIPACK')
                 self.handle_ripack(pkt)
-            elif typenum == 5 and self.state == 2:
-                print('peep1b: received Data packet')
+            elif typenum == PEEPPacket.DATA and self.state == PEEP_1b.TRANS:
+                print('peep1b: received Data')
                 self.handle_data(pkt)
             else:
-                # handle data packets?
                 print('peep1b: received UNKNOWN TYPE')
-                #if self.higherProtocolConnectionMade == True:
-                #    self.higherProtocol().data_received(data)
         else:
             print('peep1b:This packet is not a PEEPPacket')
 
@@ -113,37 +133,26 @@ class PEEP_1b(StackingProtocol):
             print('peep1b: checksum of SYN is correct')
             pktback = PEEPPacket()
             pktback.Acknowledgement = pkt.SequenceNumber + 1
-            pktback.SequenceNumber = random.randint(0,100)
-            pktback.Type = 1
+            pktback.SequenceNumber = random.randint(0,2**16)
+            pktback.Type = PEEPPacket.SYNACK
             pktback.updateChecksum()
             self.transport.write(pktback.__serialize__())
-            self.state += 1
+            self.state = PEEP_1b.HANDSHAKE
             print('peep1b: sent SYNACK')
         else:
             print('peep1b: checksum of SYN is incorrect')
-#            pktback = PEEPPacket()
-#            pktback.Type = 5
-#            pktback.updateChecksum()
-#            self.transport.write(pktback.__serialize__())
-#            print('peep1b: sent RST')
-            # clear buffer
             self.transport.close()
 
     def handle_ack(self,pkt):
         if pkt.verifyChecksum():
             print('peep1b: checksum of ACK is correct')
             # send data
-            self.state += 1
+            self.state = PEEP_1b.TRANS
             # open upper layer transport
             self.higherProtocol().connection_made(PEEP_transport1a(self.transport, self))
         else:
             print('peep1b: checksum of ACK is incorrect')
-#            pktback = PEEPPacket()
-#            pktback.Type = 5
-#            pktback.updateChecksum()
-#            self.transport.write(pktback.__serialize__())
             self.transport.close()
-#            print('peep1b: sent RST')
 
     def handle_data(self, pkt):
         if pkt.verifyChecksum():
@@ -155,45 +164,21 @@ class PEEP_1b(StackingProtocol):
     def handle_rip(self,pkt):
         if pkt.verifyChecksum():
             print('peep1b: checksum of RIP is correct')
+            # Sending remaining packets back
             pktback = PEEPPacket()
             pktback.Acknowledgement = pkt.SequenceNumber + 1
-            pktback.Type = 4
+            pktback.Type = PEEPPacket.RIPACK
             pktback.updateChecksum()
             self.transport.write(pktback.__serialize__())
             print('peep1b: sent RIPACK')
-            # Sending remaining packets back
-            pktback2 = PEEPPacket()
-            pktback2.Acknowledgement = pkt.SequenceNumber + 1
-            pktback2.Type = 3
-            pktback2.updateChecksum()
-            pktback2.SequenceNumber = random.randint(0,100)
-            self.transport.write(pktback2.__serialize__())
-            print('peep1b: sent RIP')
-        else:
-            print('peep1b: checksum of RIP is incorrect')
-            pktback = PEEPPacket()
-            pktback.Type = 5
-            pktback.updateChecksum()
-            self.transport.write(pktback.__serialize__())
-            #if self.higherProtocolConnectionMade == True:
-            #    self.higherProtocol().transport.close()
-            #    self.higherProtocolConnectionMade = False
             self.transport.close()
-            print('peep1b: sent RST')
 
     def handle_ripack(self,pkt):
         if pkt.verifyChecksum():
             print('peep1b: checksum of RIPACK is correct')
-            #if self.higherProtocolConnectionMade == True:
-            #    self.higherProtocol().transport.close()
-            #    self.higherProtocolConnectionMade = False
-            self.transport.close()
         else:
             print('peep1b: checksum of RIPACK is incorrect')
-            #if self.higherProtocolConnectionMade == True:
-            #    self.higherProtocol().transport.close()
-            #    self.higherProtocolConnectionMade = False
-            self.transport.close()
+        self.transport.close()
 
 class PEEP_transport1a(StackingTransport):
 
@@ -204,9 +189,8 @@ class PEEP_transport1a(StackingTransport):
 
     def write(self, data):
         print("peep transport write")
-        des = PacketType.Deserializer()
         # TODO: need a proper sequence number
-        data_packet = PEEPPacket(Type=5, SequenceNumber=1,\
+        data_packet = PEEPPacket(Type=PEEPPacket.DATA, SequenceNumber=1,\
                                 Data=data)
         data_packet.updateChecksum()
         self.transport.write(data_packet.__serialize__())

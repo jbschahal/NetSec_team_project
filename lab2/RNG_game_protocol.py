@@ -113,12 +113,16 @@ class RandomNumberGameClientProtocol(asyncio.Protocol):
                 else:
                     print("You've guessed incorrectly. Try again.")
                 self.state+=1
-                self.transport.close()
+                self.end_connection()
             else:
-                self.transport.close()
+                self.end_connection()
 
     def eof_received(self):
         return None
+
+    def end_connection(self):
+        self.transport.close()
+        self.loop.stop()
 
     def initiate_game(self, guess):
         if (self.state != 0): self.transport.close()

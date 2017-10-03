@@ -8,6 +8,12 @@ from playground.network.packet.fieldtypes.attributes import Optional
 class PEEPPacket(PacketType):
     DEFINITION_IDENTIFIER = "PEEP.Packet"
     DEFINITION_VERSION = "1.0"
+    SYN = 0
+    SYNACK = 1
+    ACK = 2
+    RIP = 3
+    RIPACK = 4
+    DATA = 5
 
     """
     Types:
