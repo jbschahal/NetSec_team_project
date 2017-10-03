@@ -5,16 +5,24 @@ from playground.network.packet.fieldtypes import UINT8, UINT16, UINT32, UINT64,\
 from playground.network.packet.fieldtypes.attributes import Optional
 
 
-class PEEP_Packet(PacketType):
-    DEFINITION_IDENTIFIER = "PEEP-Packet"
+class PEEPPacket(PacketType):
+    DEFINITION_IDENTIFIER = "PEEP.Packet"
     DEFINITION_VERSION = "1.0"
+
+    # PACKET TYPES
+    SYN = 0
+    SYNACK = 1
+    ACK = 2
+    RIP = 3
+    RIPACK = 4
+    DATA = 5
 
     FIELDS = [
         ("Type", UINT8),
         ("SequenceNumber", UINT32({Optional: "True"})),
         ("Checksum", UINT16),
         ("Acknowledgement", UINT32({Optional: True})),
-        ("Data", STRING({Optional: True}))
+        ("Data", BUFFER({Optional: True}))
     ]
 
     def calculateChecksum(self):
