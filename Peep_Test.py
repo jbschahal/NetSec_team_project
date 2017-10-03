@@ -3,7 +3,7 @@ import playground
 import sys
 import lab2
 from playground.network.common import StackingProtocolFactory
-from lab2.RNG_game_protocol import RandomNumberGameServerProtocol, RandomNumberGameClientProtocol
+from RNG_game_protocol import RandomNumberGameServerProtocol, RandomNumberGameClientProtocol
 
 USAGE = """usage: Peep_Test <mode>
   mode is either 'server' or 'client as a.b.c.d playground address'"""

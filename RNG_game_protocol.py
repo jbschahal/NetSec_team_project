@@ -14,7 +14,7 @@ Created by chengsteven on 9/4/2017
 
 import asyncio
 import random
-from .RNG_game_packets import RequestRandomNumberPacket, RandomNumberProblemPacket,\
+from RNG_game_packets import RequestRandomNumberPacket, RandomNumberProblemPacket,\
     GuessPacket, CorrectnessPacket
 from playground.network.packet import PacketType
 #from playground.common import logging as p_logging

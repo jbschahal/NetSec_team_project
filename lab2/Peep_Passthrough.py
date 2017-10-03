@@ -44,7 +44,7 @@ class PEEP_1a(StackingProtocol):
                             self.state = PEEP_1a.TRANS # transmission state
                             # Open upper layer transport
                             print("peep1a: connection_made to higher protocol")
-                            self.higherProtocol().connection_made(PEEP_transport1a(self.transport, self))
+                            self.higherProtocol().connection_made(PEEP_transport(self.transport, self))
                         else:
                             self.transport.close()
                 elif self.state == PEEP_1a.TRANS:
@@ -94,7 +94,7 @@ class PEEP_1b(StackingProtocol):
     def connection_made(self,transport):
         print("peep1b: connection made")
         self.transport = transport
-        self.higherProtocol().transport = PEEP_transport1a(transport, self)
+        self.higherProtocol().transport = PEEP_transport(transport, self)
         self.deserializer = PacketType.Deserializer()
         peername = transport.get_extra_info('peername')
         print('server(prepare)-->client(prepare):Connection from {}'.format(peername))
@@ -149,7 +149,7 @@ class PEEP_1b(StackingProtocol):
             # send data
             self.state = PEEP_1b.TRANS
             # open upper layer transport
-            self.higherProtocol().connection_made(PEEP_transport1a(self.transport, self))
+            self.higherProtocol().connection_made(PEEP_transport(self.transport, self))
         else:
             print('peep1b: checksum of ACK is incorrect')
             self.transport.close()
@@ -180,12 +180,12 @@ class PEEP_1b(StackingProtocol):
             print('peep1b: checksum of RIPACK is incorrect')
         self.transport.close()
 
-class PEEP_transport1a(StackingTransport):
+class PEEP_transport(StackingTransport):
 
     def __init__(self, transport, protocol):
         self._lowerTransport = transport
         self.protocol = protocol
-        self.transport = transport
+        self.transport = self._lowerTransport
 
     def write(self, data):
         print("peep transport write")
