@@ -47,6 +47,7 @@ class RandomNumberGameServerProtocol(asyncio.Protocol):
     def data_received(self, data):
         self.Deserializer.update(data)
         for packet in self.Deserializer.nextPackets():
+            print("packet: ", packet)
             if isinstance(packet, RequestRandomNumberPacket) and self.state == 0:
                 # send a RandomNumberProblemPacket
                 if (not self.number):

@@ -3,7 +3,6 @@ import playground
 import sys
 import lab2
 from playground.network.common import StackingProtocolFactory
-from lab2.Peep_Passthrough import PEEP_1a, PEEP_1b, clientFactory, serverFactory
 from lab2.RNG_game_protocol import RandomNumberGameServerProtocol, RandomNumberGameClientProtocol
 
 USAGE = """usage: Peep_Test <mode>
@@ -32,6 +31,7 @@ if __name__ == "__main__":
     else:
         loop = asyncio.get_event_loop()
         loop.set_debug(enabled=True)
+#        coro = loop.create_connection(lambda: RandomNumberGameClientProtocol(loop), host=args[0], port=34910)
         coro = playground.getConnector("lab2_protocol").create_playground_connection(lambda: RandomNumberGameClientProtocol(loop), args[0], 8888)
 
         socket, client_proto = loop.run_until_complete(coro)
