@@ -33,7 +33,7 @@ class PEEP_Client(StackingProtocol):
                     if (packet.Type == PEEPPacket.SYNACK):
                         # received a synack
                         if packet.verifyChecksum() and packet.Acknowledgement == self.sequence_number + 1:
-                            print("peep1a: Received synack")
+                            print("peep_client: Received synack")
                             packet_to_send = PEEPPacket()
                             packet_to_send.Type = PEEPPacket.ACK
                             packet_to_send.SequenceNumber = packet.Acknowledgement
@@ -51,7 +51,7 @@ class PEEP_Client(StackingProtocol):
                     # expecting a message packet
                     # TODO: if checksum bad, then don't respond
                     if packet.Type == PEEPPacket.DATA:
-                        print("peep1a: Message data received")
+                        print("peep_client: Message data received")
                         self.higherProtocol().data_received(packet.Data)
 
     def connection_made(self, transport):
@@ -200,5 +200,5 @@ class PEEP_transport(StackingTransport):
 #        self.transport = None
 
 
-clientFactory = StackingProtocolFactory(PEEP_1a)
+clientFactory = StackingProtocolFactory(PEEP_Client)
 serverFactory = StackingProtocolFactory(PEEP_Server)
