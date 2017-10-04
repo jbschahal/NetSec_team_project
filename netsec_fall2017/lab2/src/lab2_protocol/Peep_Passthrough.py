@@ -22,12 +22,16 @@ class PEEP_Client(StackingProtocol):
         self.transport = None
         self.state = PEEP_Client.INIT
         self.deserializer = None
+        self.sequence_number_received = None
+        self.acknowledgmnet_received = None
+        self.packet_received = None
 
     def data_received(self, data):
         print("peep_client: data received")
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
             if isinstance(packet, PEEPPacket):
+            	self.packet_received = packet
                 if self.state == PEEP_Client.HANDSHAKE:
                     # expecting a synack
                     if (packet.Type == PEEPPacket.SYNACK):
@@ -50,9 +54,13 @@ class PEEP_Client(StackingProtocol):
                 elif self.state == PEEP_Client.TRANS:
                     # expecting a message packet
                     # TODO: if checksum bad, then don't respond
-                    if packet.Type == PEEPPacket.DATA:
+                    if packet.verifyChecksum() and packet.Type == PEEPPacket.DATA:
                         print("peep_client: Message data received")
+                        self.sequence_number_received = packet.SequenceNumber
+                        self.acknowledgmnet_received = packet.Acknowledgement
                         self.higherProtocol().data_received(packet.Data)
+            else:
+            	print("Wrong Type of packet received")
 
     def connection_made(self, transport):
         self.transport = transport
@@ -72,6 +80,9 @@ class PEEP_Client(StackingProtocol):
         packet.updateChecksum()
         self.transport.write(packet.__serialize__())
         self.state = PEEP_Client.HANDSHAKE
+    
+    def generate_ack(self):
+    	return self.sequence_number_received + len(packet_received)
 
 class PEEP_Server(StackingProtocol):
 
@@ -190,8 +201,15 @@ class PEEP_transport(StackingTransport):
     def write(self, data):
         print("peep transport write")
         # TODO: need a proper sequence number
-        data_packet = PEEPPacket(Type=PEEPPacket.DATA, SequenceNumber=1,\
-                                Data=data)
+
+        data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=data)
+
+        if protocol.sequence_number_received = None:
+        	data_packet.SequenceNumber = random.randint(0,2**16)
+        else:
+        	data_packet.Acknowledgement = protocol.generate_ack()
+
+
         data_packet.updateChecksum()
         self.transport.write(data_packet.__serialize__())
 
