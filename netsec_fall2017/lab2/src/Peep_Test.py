@@ -1,7 +1,7 @@
 import asyncio
 import playground
 import sys
-import lab2
+import lab2_protocol
 from playground.network.common import StackingProtocolFactory
 from RNG_game_protocol import RandomNumberGameServerProtocol, RandomNumberGameClientProtocol
 
