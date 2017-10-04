@@ -204,10 +204,13 @@ class PEEP_transport(StackingTransport):
 
         data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=data)
 
-        if protocol.sequence_number_received = None:
-        	data_packet.SequenceNumber = random.randint(0,2**16)
-        else:
-        	data_packet.Acknowledgement = protocol.generate_ack()
+        if protocol.acknowledgmnet_received = None:
+        	if protocol.sequence_number_received = None:
+        		#First data sent
+        		data_packet.SequenceNumber = random.randint(0,2**16)
+        		#First data received
+        	else:
+        		data_packet.Acknowledgement = protocol.generate_ack()
 
 
         data_packet.updateChecksum()
