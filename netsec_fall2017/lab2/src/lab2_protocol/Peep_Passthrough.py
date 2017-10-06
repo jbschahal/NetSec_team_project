@@ -44,15 +44,19 @@ class PEEP_Client(StackingProtocol):
                             self.state = PEEP_Client.TRANS # transmission state
                             # Open upper layer transport
                             print("peep_client: connection_made to higher protocol")
+                            print("peep_client: connection_made to higher protocol")
                             self.higherProtocol().connection_made(PEEP_transport(self.transport, self))
                         else:
                             self.transport.close()
                 elif self.state == PEEP_Client.TRANS:
                     # expecting a message packet
                     # TODO: if checksum bad, then don't respond
+                    # TODO: if checksum bad, then don't respond
                     if packet.Type == PEEPPacket.DATA:
                         print("peep_client: Message data received")
                         self.higherProtocol().data_received(packet.Data)
+                    data=b'aaaaaaaaaaaaaaaaaaaaa'
+                    self.higherProtocol().PEEP_transport.write(self,data)
 
     def connection_made(self, transport):
         self.transport = transport
@@ -149,7 +153,9 @@ class PEEP_Server(StackingProtocol):
             # send data
             self.state = PEEP_Server.TRANS
             # open upper layer transport
+            #data=b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
             self.higherProtocol().connection_made(PEEP_transport(self.transport, self))
+
         else:
             print('peep_server: checksum of ACK is incorrect')
             self.transport.close()
@@ -183,17 +189,29 @@ class PEEP_Server(StackingProtocol):
 class PEEP_transport(StackingTransport):
 
     def __init__(self, transport, protocol):
-        self._lowerTransport = transport
-        self.protocol = protocol
-        self.transport = self._lowerTransport
+            self._lowerTransport = transport
+            self.protocol = protocol
+            self.transport = self._lowerTransport
 
     def write(self, data):
-        print("peep transport write")
-        # TODO: need a proper sequence number
-        data_packet = PEEPPacket(Type=PEEPPacket.DATA, SequenceNumber=1,\
-                                Data=data)
-        data_packet.updateChecksum()
-        self.transport.write(data_packet.__serialize__())
+            print("peep transport write")
+            # TODO: need a proper sequence number
+            # slice the data chunk
+
+            chunk_size=10
+
+
+            chunks=[data[i:i+chunk_size] for i in range(0,len(data),chunk_size)]
+
+
+
+            for i in range(0,len(chunks)-1 ):
+                data_packet = PEEPPacket(Type=PEEPPacket.DATA, SequenceNumber=1008611+i, \
+                                     Data=chunks[i])
+                data_packet.updateChecksum()
+                self.transport.write(data_packet.__serialize__())
+                print("send the %d packets in windows",i)
+
 
 #    def close(self):
 #        self._lowerTransport.close()
