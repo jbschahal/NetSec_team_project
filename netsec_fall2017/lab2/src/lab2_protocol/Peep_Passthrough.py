@@ -52,9 +52,12 @@ class PEEP_Client(StackingProtocol):
                     # expecting a message packet
                     # TODO: if checksum bad, then don't respond
                     # TODO: if checksum bad, then don't respond
+
                     if packet.Type == PEEPPacket.DATA:
                         print("peep_client: Message data received")
                         self.higherProtocol().data_received(packet.Data)
+
+                    #test chunk slicing
                     data=b'aaaaaaaaaaaaaaaaaaaaa'
                     self.higherProtocol().PEEP_transport.write(self,data)
 
@@ -197,20 +200,34 @@ class PEEP_transport(StackingTransport):
             print("peep transport write")
             # TODO: need a proper sequence number
             # slice the data chunk
+            chunk_size = 10
 
-            chunk_size=10
+            chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+
+            data_packet = PEEPPacket(Type=PEEPPacket.DATA)
+
+            if self.protocol.acknowledgmnet_received == None:
+                if self.protocol.sequence_number_received == None:
+                    # First data sent
+                    data_packet.SequenceNumber = random.randint(0, 2 ** 16)
 
 
-            chunks=[data[i:i+chunk_size] for i in range(0,len(data),chunk_size)]
+                # First data received
+                else:
+                    data_packet.Acknowledgement = self.protocol.generate_ack()
 
+            for i in range(0, len(chunks) - 1):
 
-
-            for i in range(0,len(chunks)-1 ):
-                data_packet = PEEPPacket(Type=PEEPPacket.DATA, SequenceNumber=1008611+i, \
-                                     Data=chunks[i])
+                data_packet.SequenceNumber+=i
+                data_packet.DATA=chunks[i]
+                print("send the %d packets in windows", i)
                 data_packet.updateChecksum()
                 self.transport.write(data_packet.__serialize__())
-                print("send the %d packets in windows",i)
+
+
+
+
+
 
 
 #    def close(self):
