@@ -218,7 +218,7 @@ class PEEP_transport(StackingTransport):
 
             for i in range(0, len(chunks) - 1):
 
-                data_packet.SequenceNumber+=i
+                data_packet.SequenceNumber+=chunk_size
                 data_packet.DATA=chunks[i]
                 print("send the %d packets in windows", i)
                 data_packet.updateChecksum()
