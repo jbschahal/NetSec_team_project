@@ -225,14 +225,8 @@ class PEEP_transport(StackingTransport):
             self.transport = self._lowerTransport
 
     def write(self, data):
-        print("peep transport write")
-        # TODO: need a proper sequence number
-	chunk_size=10
-
 
 	chunks=[data[i:i+chunk_size] for i in range(0,len(data),chunk_size)]
-
-
 
 	for i in range(0,len(chunks)-1 ):
 	    data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=chunks[i])
