@@ -67,6 +67,10 @@ class PEEP_Client(StackingProtocol):
             else:
                 print("Wrong Type of packet received")
 
+                    #test chunk slicing
+                    data=b'aaaaaaaaaaaaaaaaaaaaa'
+                    self.higherProtocol().PEEP_transport.write(self,data)
+
     def connection_made(self, transport):
         self.transport = transport
         self.deserializer = PacketType.Deserializer()
@@ -225,7 +229,6 @@ class PEEP_transport(StackingTransport):
             self.transport = self._lowerTransport
 
     def write(self, data):
-
 	chunks=[data[i:i+chunk_size] for i in range(0,len(data),chunk_size)]
 
 	for i in range(0,len(chunks)-1 ):
@@ -236,7 +239,6 @@ class PEEP_transport(StackingTransport):
 	    self.transport.write(data_packet.__serialize__())
 
 	    print("Data sent as:\nseq: " + str(data_packet.SequenceNumber) + "\nack: " + str(data_packet.Acknowledgement) + "\nchecksum: " + str(data_packet.Checksum) + "\ntype: "  + str(data_packet.Type) + "\ndata: " + str(data_packet.Data) + "\n")
-
 
 
 clientFactory = StackingProtocolFactory(PEEP_Client)
