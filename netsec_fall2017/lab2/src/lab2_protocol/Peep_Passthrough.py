@@ -22,9 +22,12 @@ class PEEP_Client(StackingProtocol):
         self.transport = None
         self.state = PEEP_Client.INIT
         self.deserializer = None
-        self.sequence_number_received = "Unset Packet Field"#--
-        self.acknowledgmnet_received = "Unset Packet Field"#--
-        self.packet_received = None#--
+        self.sequence_number = None
+        self.acknowledgement = None
+        self.base_sequence_number = None
+        self.window = 5
+        self.chunks = None
+        self.num_acks_received = 0
 
     def data_received(self, data):
         print("peep_client: data received")
@@ -40,6 +43,7 @@ class PEEP_Client(StackingProtocol):
                             packet_to_send = PEEPPacket()
                             packet_to_send.Type = PEEPPacket.ACK
                             packet_to_send.SequenceNumber = packet.Acknowledgement
+                            self.base_sequence_number = packet.Acknowledgement
                             packet_to_send.Acknowledgement= packet.SequenceNumber+1
                             packet_to_send.updateChecksum()
                             print("peep_client: Sending Back Ack")
@@ -53,23 +57,52 @@ class PEEP_Client(StackingProtocol):
                             self.transport.close()
                 elif self.state == PEEP_Client.TRANS:
                     # expecting a message packet
-                    # TODO: if checksum bad, then don't respond
-                    # TODO: if checksum bad, then don't respond
-                    if packet.Type == PEEPPacket.DATA:
-                        self.packet_received = packet#--
-                        self.sequence_number_received = packet.SequenceNumber#--
-                        self.acknowledgmnet_received = packet.Acknowledgement#--
+                    # TODO: keep track of overflows
+                    if packet.Type == PEEPPacket.DATA and packet.verifyChecksum():
                         print("peep_client: Message data received")
-                        #--
-                        print("Data received as:\nseq: " + str(packet.SequenceNumber) + "\nack: " + str(packet.Acknowledgement) + "\nchecksum: " + str(packet.Checksum) + "\ntype: "  + str(packet.Type) + "\ndata: " + str(packet.Data) + "\n")
-                        #--
+                        print(packet.Data)
+                        print(packet)
+                        self.sequence_number = packet.SequenceNumber
+                        self.acknowledgement = self.sequence_number + len(packet.Data)
+                        ack_packet = PEEPPacket()
+                        ack_packet.Acknowledgement = self.acknowledgement
+                        ack_packet.Type = PEEPPacket.ACK
+                        ack_packet.updateChecksum()
+                        self.transport.write(ack_packet.__serialize__())
+                        # TODO: make sure in order
                         self.higherProtocol().data_received(packet.Data)
+                    elif packet.Type == PEEPPacket.ACK and packet.verifyChecksum():
+                        print("peep_client: received ack")
+                        self.sequence_number = packet.Acknowledgement
+                        self.send_next_data()
             else:
                 print("Wrong Type of packet received")
 
-                    #test chunk slicing
-                    data=b'aaaaaaaaaaaaaaaaaaaaa'
-                    self.higherProtocol().PEEP_transport.write(self,data)
+    def transmit_data(self, data, chunk_size):
+        self.data = data
+        self.chunk_size = chunk_size
+        self.send_next_data()
+        #self.send_more_data()
+
+    def send_next_data(self):
+        i = self.sequence_number - self.base_sequence_number
+        if (i >= len(self.data)):
+            return
+        data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=self.data[i:i+self.chunk_size])
+        data_packet.SequenceNumber = self.sequence_number
+        data_packet.updateChecksum()
+        self.transport.write(data_packet.__serialize__())
+        print("Data sent as:\nseq: " + str(data_packet.SequenceNumber) + "\nack: " + str(data_packet.Acknowledgement))
+
+    def send_more_data():
+        # if there is more data to send, send the next bytes
+        # which bytes to send is determined by current_ack - base_seq_number + windowsize*chunk_size
+        for i in range(self.sequence_number - self.base_sequence_number, self.sequence_number - self.base_sequence_number + len(self.data), self.chunk_size):
+            data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=self.data[i:i+self.chunk_size])
+            data_packet.SequenceNumber = self.base_sequence_number + i
+            data_packet.updateChecksum()
+            self.transport.write(data_packet.__serialize__())
+            print("Data sent as:\nseq: " + str(data_packet.SequenceNumber) + "\nack: " + str(data_packet.Acknowledgement))
 
     def connection_made(self, transport):
         self.transport = transport
@@ -90,11 +123,6 @@ class PEEP_Client(StackingProtocol):
         self.transport.write(packet.__serialize__())
         self.state = PEEP_Client.HANDSHAKE
 
-    def generate_ack(self):
-        return self.sequence_number_received + 1
-
-    def generate_seq(self):
-        return self.acknowledgmnet_received + 1
 
 class PEEP_Server(StackingProtocol):
 
@@ -113,10 +141,10 @@ class PEEP_Server(StackingProtocol):
         self.transport = None
         self.deserializer = None
         self.state = PEEP_Server.INIT
-
-        self.sequence_number_received = None#--
-        self.acknowledgmnet_received = None#--
-        self.packet_received = None#--
+        self.sequence_number = None
+        self.acknowledgement = None
+        self.data = None
+        self.chunk_size = None
 
     def connection_made(self,transport):
         print("peep_server: connection made")
@@ -125,6 +153,25 @@ class PEEP_Server(StackingProtocol):
         self.deserializer = PacketType.Deserializer()
         peername = transport.get_extra_info('peername')
         print('server(prepare)-->client(prepare):Connection from {}'.format(peername))
+
+    def transmit_data(self, data, chunk_size):
+        print("server transmit data")
+        self.data = data
+        self.chunk_size = chunk_size
+        self.send_next_data()
+        #self.send_more_data()
+
+    def send_next_data(self):
+        print("server send next data")
+        i = self.sequence_number - self.base_sequence_number
+        if (i >= len(self.data)):
+            return
+        data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=self.data[i:i+self.chunk_size])
+        data_packet.SequenceNumber = self.sequence_number
+        data_packet.updateChecksum()
+        self.transport.write(data_packet.__serialize__())
+        print("Data sent as:\nseq: " + str(data_packet.SequenceNumber) + "\nack: " + str(data_packet.Acknowledgement))
+
 
     def data_received(self,data):
         print("peep_server: data received")
@@ -138,7 +185,7 @@ class PEEP_Server(StackingProtocol):
             if typenum == PEEPPacket.SYN and self.state == PEEP_Server.INIT:
                 print('peep_server: received SYN')
                 self.handle_syn(pkt)
-            elif typenum == PEEPPacket.ACK and self.state == PEEP_Server.HANDSHAKE:
+            elif typenum == PEEPPacket.ACK:
                 print('peep_server: received ACK')
                 self.handle_ack(pkt)
             elif typenum == PEEPPacket.RIP and self.state == PEEP_Server.TRANS:
@@ -171,30 +218,37 @@ class PEEP_Server(StackingProtocol):
             self.transport.close()
 
     def handle_ack(self,pkt):
-        if pkt.verifyChecksum():
-            print('peep_server: checksum of ACK is correct')
-            # send data
-            self.state = PEEP_Server.TRANS
-            # open upper layer transport
-            #data=b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-            self.higherProtocol().connection_made(PEEP_transport(self.transport, self))
+        if self.state == PEEP_Server.HANDSHAKE:
+            if pkt.verifyChecksum():
+                print('peep_server: checksum of ACK is correct')
+                # send data
+                self.state = PEEP_Server.TRANS
+                # open upper layer transport
+                self.higherProtocol().connection_made(PEEP_transport(self.transport, self))
+        elif self.state == PEEP_Server.TRANS:
+            #TODO: move window; send next packet
+            self.sequence_number = pkt.Acknowledgement
+            self.send_next_data()
 
         else:
-            print('peep_server: checksum of ACK is incorrect')
+            print('peep_server: got ack in a bad state')
             self.transport.close()
 
     def handle_data(self, pkt):
-        if pkt.verifyChecksum():
-            print('peep_server: checksum of data is correct')
-            self.packet_received = pkt#--
-            self.sequence_number_received = pkt.SequenceNumber#--
-            self.acknowledgmnet_received = pkt.Acknowledgement#--
-            #--
-            print("Data received as:\nseq: " + str(pkt.SequenceNumber) + "\nack: " + str(pkt.Acknowledgement) + "\nchecksum: " + str(pkt.Checksum) + "\ntype: "  + str(pkt.Type) + "\ndata: " + str(pkt.Data) + "\n")
-            #--
+        if pkt.Type == PEEPPacket.DATA and pkt.verifyChecksum():
+            print("peep_client: Message data received")
+            print(pkt)
+            self.sequence_number = pkt.SequenceNumber
+            self.acknowledgement = self.sequence_number + len(pkt.Data)
+            ack_packet = PEEPPacket()
+            ack_packet.Acknowledgement = self.acknowledgement
+            ack_packet.Type = PEEPPacket.ACK
+            ack_packet.updateChecksum()
             self.higherProtocol().data_received(pkt.Data)
+            self.transport.write(ack_packet.__serialize__())
+            # TODO: make sure in order
         else:
-            print("pee_server: checksum of data is incorrect")
+            print("peep_server: checksum of data is incorrect")
 
     def handle_rip(self,pkt):
         if pkt.verifyChecksum():
@@ -219,27 +273,19 @@ class PEEP_Server(StackingProtocol):
         return self.sequence_number_received + 1
 
     def generate_seq(self):
-        return self.acknowledgmnet_received + 1
+        return self.acknowledgement_received + 1
 
 class PEEP_transport(StackingTransport):
 
     def __init__(self, transport, protocol):
-            self._lowerTransport = transport
-            self.protocol = protocol
-            self.transport = self._lowerTransport
+        self._lowerTransport = transport
+        self.protocol = protocol
+        self.transport = self._lowerTransport
+        self.chunk_size = 1024
 
     def write(self, data):
-	chunks=[data[i:i+chunk_size] for i in range(0,len(data),chunk_size)]
-
-	for i in range(0,len(chunks)-1 ):
-	    data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=chunks[i])
-	    data_packet.updateChecksum()
-            data_packet.SequenceNumber = self.protocol.generate_seq()
-            data_packet.Acknowledgement = self.protocol.generate_ack()
-	    self.transport.write(data_packet.__serialize__())
-
-	    print("Data sent as:\nseq: " + str(data_packet.SequenceNumber) + "\nack: " + str(data_packet.Acknowledgement) + "\nchecksum: " + str(data_packet.Checksum) + "\ntype: "  + str(data_packet.Type) + "\ndata: " + str(data_packet.Data) + "\n")
-
+        print("peep transport write")
+        self.protocol.transmit_data(data, self.chunk_size)
 
 clientFactory = StackingProtocolFactory(PEEP_Client)
 serverFactory = StackingProtocolFactory(PEEP_Server)

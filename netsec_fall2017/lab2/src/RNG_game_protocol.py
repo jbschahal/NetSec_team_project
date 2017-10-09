@@ -17,8 +17,8 @@ import random
 from RNG_game_packets import RequestRandomNumberPacket, RandomNumberProblemPacket,\
     GuessPacket, CorrectnessPacket
 from playground.network.packet import PacketType
-#from playground.common import logging as p_logging
-#p_logging.EnablePresetLogging(p_logging.PRESET_TEST)
+from playground.common import logging as p_logging
+p_logging.EnablePresetLogging(p_logging.PRESET_TEST)
 
 
 class RandomNumberGameServerProtocol(asyncio.Protocol):
@@ -45,9 +45,10 @@ class RandomNumberGameServerProtocol(asyncio.Protocol):
         self.transport = None
 
     def data_received(self, data):
+        print("rng server data rec")
         self.Deserializer.update(data)
         for packet in self.Deserializer.nextPackets():
-            print("packet: ", packet)
+            print("rng packet: ", packet)
             if isinstance(packet, RequestRandomNumberPacket) and self.state == 0:
                 # send a RandomNumberProblemPacket
                 if (not self.number):
@@ -84,7 +85,7 @@ class RandomNumberGameClientProtocol(asyncio.Protocol):
         self.state = 0
 
     def connection_made(self, transport):
-        print("Client has connected to the server")
+        print("Server has connected to the client")
         self.transport = transport
         self.Deserializer = PacketType.Deserializer()
         self.initiate_game(random.randint(0,9))
@@ -95,6 +96,7 @@ class RandomNumberGameClientProtocol(asyncio.Protocol):
         self.loop.stop()
 
     def data_received(self, data):
+        print("rng client data rec")
         self.Deserializer.update(data)
         for packet in self.Deserializer.nextPackets():
             if isinstance(packet, RandomNumberProblemPacket) and self.state == 1:
