@@ -27,6 +27,8 @@ class PEEP_Client(StackingProtocol):
         self.base_sequence_number = None
         self.window = 5
         self.chunks = None
+        # when doing windows, we can have a field:
+        # self.bytes_acked = None
         self.bytes_sent = None
         self.data_size = None
 
@@ -111,13 +113,13 @@ class PEEP_Client(StackingProtocol):
         self.chunk_size = chunk_size
         self.bytes_sent = 0
         self.send_next_data()
-        #self.send_more_data()
 
     def send_next_data(self):
         print("client send next data")
         if (self.bytes_sent >= self.data_size):
+            print("all bytes have been sent from me")
             return
-        i = 0
+        i = self.bytes_sent
         data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=self.data[i:i+self.chunk_size])
         data_packet.SequenceNumber = self.sequence_number
         data_packet.updateChecksum()
@@ -185,13 +187,12 @@ class PEEP_Server(StackingProtocol):
         self.chunk_size = chunk_size
         self.bytes_sent = 0
         self.send_next_data()
-        #self.send_more_data()
 
     def send_next_data(self):
         print("server send next data")
         if (self.bytes_sent >= self.data_size):
             return
-        i = 0
+        i = self.bytes_sent
         data_packet = PEEPPacket(Type=PEEPPacket.DATA, Data=self.data[i:i+self.chunk_size])
         data_packet.SequenceNumber = self.sequence_number
         data_packet.updateChecksum()
