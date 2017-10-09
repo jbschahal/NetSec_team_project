@@ -17,8 +17,8 @@ import random
 from RNG_game_packets import RequestRandomNumberPacket, RandomNumberProblemPacket,\
     GuessPacket, CorrectnessPacket
 from playground.network.packet import PacketType
-from playground.common import logging as p_logging
-p_logging.EnablePresetLogging(p_logging.PRESET_TEST)
+#from playground.common import logging as p_logging
+#p_logging.EnablePresetLogging(p_logging.PRESET_TEST)
 
 
 class RandomNumberGameServerProtocol(asyncio.Protocol):
@@ -48,20 +48,22 @@ class RandomNumberGameServerProtocol(asyncio.Protocol):
         print("rng server data rec")
         self.Deserializer.update(data)
         for packet in self.Deserializer.nextPackets():
-            print("rng packet: ", packet)
             if isinstance(packet, RequestRandomNumberPacket) and self.state == 0:
                 # send a RandomNumberProblemPacket
                 if (not self.number):
                     self.number = random.randint(1, 10)
                 self.state+=1
+                print("rng server problem packet")
                 self.transport.write(RandomNumberProblemPacket(min_range=1, max_range=10, game_id=self.game_id).__serialize__())
             elif isinstance(packet, GuessPacket) and self.state == 1:
                 self.state+=1
                 if packet.guess == self.number:
                     # correct guess
+                    print("rng server correctness packet")
                     self.transport.write(CorrectnessPacket(game_id=self.game_id, correct=True).__serialize__())
                 else:
                     # incorrect guess
+                    print("rng server correctness packet")
                     self.transport.write(CorrectnessPacket(game_id=self.game_id, correct=False).__serialize__())
             else:
                 self.transport.close()
@@ -105,6 +107,7 @@ class RandomNumberGameClientProtocol(asyncio.Protocol):
                 self.game_id = packet.game_id
                 print("Guessing: " + str(self.guess))
                 self.state+=1
+                print("rng client guess packet")
                 self.transport.write(GuessPacket(game_id=self.game_id, guess=self.guess).__serialize__())
             elif isinstance(packet, CorrectnessPacket) and self.state == 2:
                 # state whether you were correct.
