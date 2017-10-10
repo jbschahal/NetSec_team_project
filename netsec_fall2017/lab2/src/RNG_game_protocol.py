@@ -48,6 +48,7 @@ class RandomNumberGameServerProtocol(asyncio.Protocol):
         print("rng server data rec")
         self.Deserializer.update(data)
         for packet in self.Deserializer.nextPackets():
+            print("rng server packet: ", packet)
             if isinstance(packet, RequestRandomNumberPacket) and self.state == 0:
                 # send a RandomNumberProblemPacket
                 if (not self.number):
@@ -101,6 +102,7 @@ class RandomNumberGameClientProtocol(asyncio.Protocol):
         print("rng client data rec")
         self.Deserializer.update(data)
         for packet in self.Deserializer.nextPackets():
+            print("rng cli packet: ", packet)
             if isinstance(packet, RandomNumberProblemPacket) and self.state == 1:
                 # we received a game packet, print the range and ask
                 # for input

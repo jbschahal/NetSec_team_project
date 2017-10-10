@@ -37,3 +37,6 @@ class PEEPPacket(PacketType):
 
     def verifyChecksum(self):
         return self.Checksum == self.calculateChecksum()
+
+    def __repr__(self):
+        return "PEEPPacket: \n" + "Type: " + str(self.Type) + "\nSeq: " + str(self.SequenceNumber) + "\nAck: " + str(self.Acknowledgement)
