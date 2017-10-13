@@ -53,7 +53,7 @@ class PEEP_Client(StackingProtocol):
         elif typenum == PEEPPacket.RIP and self.state == PEEP_Client.TRANS:
             print('peep_client: received RIP')
             self.handle_rip(packet)
-        elif typenum == PEEPPacket.RIPACK and self.state == PEEP_client.TEARDOWN:
+        elif typenum == PEEPPacket.RIPACK and self.state == PEEP_Client.TEARDOWN:
             print('peep_client: received RIPACK')
             self.handle_ripack(packet)
         else:
@@ -82,6 +82,7 @@ class PEEP_Client(StackingProtocol):
         ack_packet.Acknowledgement = self.acknowledgement
         ack_packet.Type = PEEPPacket.ACK
         ack_packet.updateChecksum()
+        print('sending ack')
         self.transport.write(ack_packet.__serialize__())
         # TODO: make sure in order
         self.higherProtocol().data_received(packet.Data)
@@ -111,6 +112,9 @@ class PEEP_Client(StackingProtocol):
 
 
     def transmit_data(self, data, chunk_size):
+        # TODO: need to append the data, not remove it.
+        # Case: if protocol sends 2 consecutive packets, the 2nd packet
+        # will replace the first packet.
         self.data = data
         self.data_size = len(data)
         self.chunk_size = chunk_size
@@ -177,7 +181,7 @@ class PEEP_Client(StackingProtocol):
         self.sequence_number = random.randint(0,2**16)
         print("peep_client: start handshake")
         packet = PEEPPacket()
-        packet.Type = self.state
+        packet.Type = PEEPPacket.SYN
         packet.SequenceNumber = self.sequence_number
         packet.updateChecksum()
         self.transport.write(packet.__serialize__())
@@ -244,8 +248,11 @@ class PEEP_Server(StackingProtocol):
 
     def data_received(self,data):
         print("peep_server: data received")
+        print("peep_server: data received2")
         self.deserializer.update(data)
+        print("des update")
         for packet in self.deserializer.nextPackets():
+            print("got a packet out")
             if isinstance(packet, PEEPPacket) and packet.verifyChecksum():
                 self.handle_packets(packet)
 
@@ -337,7 +344,7 @@ class PEEP_transport(StackingTransport):
         self._lowerTransport = transport
         self.protocol = protocol
         self.transport = self._lowerTransport
-        self.chunk_size = 10
+        self.chunk_size = 1024
 
     def write(self, data):
         print("peep transport write")

@@ -17,8 +17,8 @@ import random
 from RNG_game_packets import RequestRandomNumberPacket, RandomNumberProblemPacket,\
     GuessPacket, CorrectnessPacket
 from playground.network.packet import PacketType
-#from playground.common import logging as p_logging
-#p_logging.EnablePresetLogging(p_logging.PRESET_TEST)
+from playground.common import logging as p_logging
+p_logging.EnablePresetLogging(p_logging.PRESET_TEST)
 
 
 class RandomNumberGameServerProtocol(asyncio.Protocol):
