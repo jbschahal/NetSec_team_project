@@ -170,7 +170,7 @@ class PEEP_Client(StackingProtocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        self.deserializer = PacketType.Deserializer()
+        self.deserializer = PEEPPacket.Deserializer()
         self.start_handshake()
 
     def connection_lost(self, exc):
@@ -217,7 +217,7 @@ class PEEP_Server(StackingProtocol):
         print("peep_server: connection made")
         self.transport = transport
         self.higherProtocol().transport = PEEP_transport(transport, self)
-        self.deserializer = PacketType.Deserializer()
+        self.deserializer = PEEPPacket.Deserializer()
         peername = transport.get_extra_info('peername')
         print('server(prepare)-->client(prepare):Connection from {}'.format(peername))
 
