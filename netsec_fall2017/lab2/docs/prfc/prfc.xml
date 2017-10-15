@@ -1,0 +1,831 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!-- This template is for creating an Internet Draft using xml2rfc,
+    which is available here: http://xml2rfc.ietf.org. -->
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
+<!-- One method to get references from the online citation libraries.
+    There has to be one entity for each item to be referenced. 
+    An alternate method (rfc include) is described in the references. -->
+
+<!ENTITY RFC2119 SYSTEM "http://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml">
+<!ENTITY RFC2360 SYSTEM "http://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.2360.xml">
+<!ENTITY RFC2629 SYSTEM "http://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.2629.xml">
+<!ENTITY RFC3552 SYSTEM "http://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.3552.xml">
+<!ENTITY RFC5226 SYSTEM "http://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.5226.xml">
+]>
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+<!-- used by XSLT processors -->
+<!-- For a complete list and description of processing instructions (PIs), 
+    please see http://xml2rfc.ietf.org/authoring/README.html. -->
+<!-- Below are generally applicable Processing Instructions (PIs) that most I-Ds might want to use.
+    (Here they are set differently than their defaults in xml2rfc v1.32) -->
+<?rfc strict="yes" ?>
+<!-- give errors regarding ID-nits and DTD validation -->
+<!-- control the table of contents (ToC) -->
+<?rfc toc="yes"?>
+<!-- generate a ToC -->
+<?rfc tocdepth="4"?>
+<!-- the number of levels of subsections in ToC. default: 3 -->
+<!-- control references -->
+<?rfc symrefs="yes"?>
+<!-- use symbolic references tags, i.e, [RFC2119] instead of [1] -->
+<?rfc sortrefs="yes" ?>
+<!-- sort the reference entries alphabetically -->
+<!-- control vertical white space 
+    (using these PIs as follows is recommended by the RFC Editor) -->
+<?rfc compact="yes" ?>
+<!-- do not start each main section on a new page -->
+<?rfc subcompact="no" ?>
+<!-- keep one blank line between list items -->
+<!-- end of list of popular I-D processing instructions -->
+
+
+
+
+<rfc category="std" docName="rfc1" ipr="playgroundStd_v1_0" number="1">
+ <!-- category values: std, bcp, info, exp, and historic
+    ipr values: trust200902, noModificationTrust200902, noDerivativesTrust200902,
+       or pre5378Trust200902, playgroundWinter201501
+    you can add the attributes updates="NNNN" and obsoletes="NNNN" 
+    they will automatically be output with "(if approved)" -->
+
+ <!-- ***** FRONT MATTER ***** -->
+
+ <front>
+   <!-- The abbreviated title is used in the page header - it is only necessary if the 
+        full title is longer than 39 characters -->
+
+   <title abbrev="PRFC's">People Enjoy Eavesdropping Protocol</title>
+
+   <!-- add 'role="editor"' below for the editors if appropriate -->
+
+   <!-- Another author who claims to be an editor -->
+
+   <author fullname="Steven Ning Cheng" initials="S.N." role="editor"
+           surname="Cheng">
+     <organization>JHU Network Security Fall 2017</organization>
+
+     <address>
+       <postal>
+         <street>John Hopkins University Graduate Lab </street>
+
+         <!-- Reorder these if your country does things differently -->
+
+         <city>Baltimore</city>
+
+         <region>MD</region>
+
+         <code>21218</code>
+
+         <country>USA</country>
+       </postal>
+
+       <phone>+1 714-261-6147</phone>
+
+       <email>stevencheng@jhu.edu</email>
+
+       <!-- uri and facsimile elements may also be added -->
+     </address>
+   </author>
+
+<author fullname="Jibraan Singh Chahal" initials="J.S.C" role="editor"
+           surname="Chahal">
+     <organization>JHU Network Security Fall 2017</organization>
+
+     <address>
+       <postal>
+         <street>John Hopkins University Graduate Lab </street>
+
+         <!-- Reorder these if your country does things differently -->
+
+         <city>Baltimore</city>
+
+         <region>MD</region>
+
+         <code>21218</code>
+
+         <country>USA</country>
+       </postal>
+
+       <phone>+1 443-525-2469</phone>
+
+       <email>jchahal1@jhu.edu</email>
+
+       <!-- uri and facsimile elements may also be added -->
+     </address>
+   </author>
+
+<author fullname="Mengdi Yang" initials="M.D.Y" role="editor"
+           surname="Yang">
+     <organization>JHU Network Security Fall 2017</organization>
+
+     <address>
+       <postal>
+         <street>John Hopkins University Graduate Lab </street>
+
+         <!-- Reorder these if your country does things differently -->
+
+         <city>Baltimore</city>
+
+         <region>MD</region>
+
+         <code>21218</code>
+
+         <country>USA</country>
+       </postal>
+
+       <phone>+1 410-218-1481</phone>
+
+       <email>myang51@jhu.edu</email>
+
+       <!-- uri and facsimile elements may also be added -->
+     </address>
+   </author>
+
+<author fullname="Suyi Liu" initials="S.Y.L" role="editor"
+           surname="Liu">
+     <organization>JHU Network Security Fall 2017</organization>
+
+     <address>
+       <postal>
+         <street>John Hopkins University Graduate Lab </street>
+
+         <!-- Reorder these if your country does things differently -->
+
+         <city>Baltimore</city>
+
+         <region>MD</region>
+
+         <code>21218</code>
+
+         <country>USA</country>
+       </postal>
+
+       <phone>+1 443-799-9993</phone>
+
+       <email>sliu92@jhu.edu</email>
+
+       <!-- uri and facsimile elements may also be added -->
+     </address>
+   </author>
+   <author fullname="Nan Ding" initials="N.D" role="editor"
+           surname="Ding">
+     <organization>JHU Network Security Fall 2017</organization>
+
+     <address>
+       <postal>
+         <street>John Hopkins University Graduate Lab </street>
+
+         <!-- Reorder these if your country does things differently -->
+
+         <city>Baltimore</city>
+
+         <region>MD</region>
+
+         <code>21218</code>
+
+         <country>USA</country>
+       </postal>
+
+       <phone>+1 443-525-5487</phone>
+
+       <email>nding5@jhu.edu</email>
+
+       <!-- uri and facsimile elements may also be added -->
+     </address>
+   </author>
+
+
+   <date year="2017" />
+
+   <!-- If the month and year are both specified and are the current ones, xml2rfc will fill 
+        in the current day for you. If only the current year is specified, xml2rfc will fill 
+	 in the current day and month for you. If the year is not the current one, it is 
+	 necessary to specify at least a month (xml2rfc assumes day="1" if not specified for the 
+	 purpose of calculating the expiry date).  With drafts it is normally sufficient to 
+	 specify just the year. -->
+
+   <!-- Meta-data Declarations -->
+
+   <area>General</area>
+
+   <workgroup>Playground Experiment Director</workgroup>
+
+   <!-- WG name at the upperleft corner of the doc,
+        IETF is fine for individual submissions.  
+	 If this element is not present, the default is "Network Working Group",
+        which is used by the RFC Editor as a nod to the history of the IETF. -->
+
+   <keyword>PEEP</keyword>
+
+   <!-- Keywords will be incorporated into HTML output
+        files in a meta tag but they have no effect on text or nroff
+        output. If you submit your draft to the RFC Editor, the
+        keywords will be used for the search engine. -->
+
+   <abstract>
+     <t>The "Players Enjoy Eavesdropping Protocol" (PEEP) provides a reliable method of transmitting 	packets between two hosts. This protocol guarantees that the transmitted packets are received 	in order and correctly in the face of natural errors.</t>	
+     <t>This PRFC describes the specifications of the PEEP protocol, including the functions to be implemented and the interfaces for users to utilize PEEP.</t>
+     <t>PEEP relies on Playground, a tool that uses TCP and allows developers to build their own networks, configure their own switches and VNICs (virtual network interface card), and build their own networking protocols.</t>
+   </abstract>
+
+ </front>
+
+ <middle>
+   <section title="Introduction">
+	<section title = "Motivation and Scope">
+     <t>The internet has become a critical resource in everyone's daily lives and, as aspiring security 	professionals, it is important for us to understand the principles the internet is built upon 	and to be able to understand why the current state of the internet is insecure and how we can 	improve upon it. The PEEP Protocol has been developed as part of a course in Network Security 	at the Johns Hopkins University in order for us, as a class, to be able to conduct attacks that 	could exist in the real world and to construct defensive measures to mitigate those attacks. 
+     </t>
+     <t>This document focuses on the requirements and specifications of the Players Enjoy Eavesdropping 	Protocol. Similar to the Transmission Control Protocol (TCP) [ RFC 0793 ], PEEP is a packet-	oriented host-to-host protocol designed to provide reliable data transmission through an 	unreliable network environment and handle common network errors such as a loss of packets, 	packet duplication, and packet corruption. It is important to note that PEEP does not provide 	authentication, integrity, or confidentiality. For use in the real world, PEEP would lie in the 	transport layer in the OSI model (figure 1) and utilize IP, an unreliable network protocol, to 	guarantee reliability.</t>
+                        <t>+---------------------+</t>
+                        <t>|     Application     |</t>
+                        <t>+---------------------+</t>
+                        <t>|         PEEP        |</t>
+                        <t>+---------------------+</t>
+                        <t>|           IP        |</t>
+                        <t>+---------------------+</t>
+                        <t>|      Data Link      |</t>
+                        <t>+---------------------+</t>
+                        <t>|       Physical      |</t>
+                        <t>+---------------------+</t>
+
+                                <t>Figure 1</t>
+</section>
+
+     <section title="About this Document">
+       <t>This document presents a specification of the PEEP implementation and the basic concepts 	behind PEEP. Section 2 introduces the philosophical basis of the PEEP design. Section 3 	describes in detail the format of the packets used in PEEP and how we achieve and guarantee 	reliable, in-order packet delivery in the presence of natural errors.
+	</t>
+     </section>
+   
+   <section title="Interfaces and Operations">
+    <t>PEEP provides an asynchronous, packet transport mechanism for protocols at the application level and sends packets between two hosts using TCP. Essentially, PEEP is designed to be a middleware that overlays IP and supplies an application with a packet delivery service. When an application uses PEEP to send data from one host to another, PEEP will first establish a session with the receiving host, transfer the necessary data between those two hosts, and gracefully terminate the session. Because we are using Playground, this method of writing data on the wire is abstracted by software. In actuality, when we write packets on the wire, we are using TCP to send them from host to host.
+</t>
+
+<t>To provide a reliable network connection, this protocol includes four basic facilities: basic data transfer, reliability, flow control, and sessions.</t>    
+    <t><list style="numbers">
+    	<t>Basic Data Transfer</t>
+	<t>The data given to PEEP is packaged into packets and transmitted to the desired receiving host through the internet,</t>
+    	<t>Reliability</t>
+	<t>The PEEP MUST handle errors that may occur in an unreliable internet, including packet loss, packet corruption, packet duplication, and packets received out of order.
+  PEEP guarantees reliability by sending data and responding to received data with an acknowledgement. If a sender does not receive an acknowledgement within a time period, PEEP will retransmit the unacknowledged data until it receives a proper acknowledgement.PEEP also includes a checksum to check the integrity of data. Any accidental data corruption will be detected by the checksum and discarded if the checksum does not match. It is important to note that this checksum does not guarantee integrity in the presence of malice. It is trivial to perform a Man-In-the-Middle to alter the data of a packet and recalculate the checksum.</t>			
+<t>Flow Control</t>	
+<t>PEEP also numbers the data that is sent. The host receiving data will be able to use this packet numbering system to reorder packets that have been received out of order.</t>
+	<t>Session</t>
+	<t>When one host attempts to send data to a listening host without an already established session, PEEP will conduct a three-way handshake between the sender and the receiver and establish a session. PEEP will also maintain session management to handle instances of when a host needs to establish multiple, separate sessions with a host.</t>
+    </list></t>
+</section>
+</section>
+
+
+
+
+
+<section title="Philosophy">
+
+<section title="Elements of the network">
+<t>The Playground network environment allows hosts to establish connection to a switch through a VNIC. The switch is connected to other switches and other VNICs to simulate a real world network. Each VNIC can be created with an arbitrary playground address which, similar to an IPV4 address, has four parts, but each part can be an arbitrary large number. Once this network is set up, hosts can communicate with other hosts through their VNIC addresses.</t>
+<t>We define a packet as a standard format used between a sender and a receiver to perform all PEEP operations. A packet will contain metadata and any data that one hosts wants to send to another host.</t>
+<t>Playground operates similarly to a UDP transmission: a sender can send any kind of data to any host at any port. A host can respectively set up a server and listen for incoming packets. Like UDP, this guarantees nothing about reliability. This is why we need PEEP.</t>
+</section>
+
+<section title="Relation to other protocols">
+<t>The following diagram illustrates the place of PEEP in the protocol hierarchy:</t>
+ <t>     +----------+  +-------+   +-------+       +-----+</t>
+ <t>     |Games     |  | FTP   |   | HTTP  |   ... |     |   Application Level</t>
+<t>      +----------+  +-------+   +-------+       +-----+</t>
+ <t>                             |              </t>
+ <t>     +-----------------------------------------------+</t>
+ <t>     |                    PEEP                       |   Peep Level</t>
+ <t>     +-----------------------------------------------+</t>
+<t>                              |            </t>
+ <t>     +-----------------------------------------------+</t>
+ <t>     |                  Playground                   |   Playground Level</t>
+ <t>     +-----------------------------------------------+</t>
+<t>                              |                              </t>
+ <t>     +-----------------------------------------------+</t>
+  <t>    |                      TCP                      |</t>
+  <t>    +-----------------------------------------------+</t>
+
+   <t>              Protocol Relationships</t>
+
+                     <t>     Figure 2</t>
+<t>Structure displays the relation of Peep and other protocols </t>
+<t>It is expected that PEEP will be able to deliver the higher level data of protocol and transmit the data over lower level protocols.</t>
+</section>
+
+<section title="Reliable Communication">
+<t>A stream of data sent using PEEP will be delivered reliably and in order at the destination.</t>
+<t>PEEP does so by including sequence numbers and acknowledgement numbers in packets during the transmission process. The sequence number is essentially a label that numbers each packet. When PEEP wants to send data to another host, it essentially numbers each byte of the data through the sequence number, so when a host transmits a data packet, the packet will include a sequence number dictating which byte the data belongs to.
+</t>
+<t>The receiving host will respond to each data packet with an acknowledgement and send that acknowledgement back to the sender. This acknowledgement notifies the sender that the receiver has indeed received a data packet. In addition, each acknowledgement includes an acknowledgement number that corresponds to which bytes of data the receiver has received. We will describe the specific format of these sequence numbers and acknowledgement numbers in section 3.</t>
+<t>In addition to acknowledgements, PEEP ensures reliability through timeouts. For every packet sent, the sender will set a timer and if this timer expires, the corresponding packet will be retransmitted. The timer is stopped upon receiving an acknowledgement.</t>
+<t>This guarantees reliability against natural errors. It does not guarantee reliability in the face of malice. If a data packet is dropped, an acknowledgement is never sent and the timer will expire. If an acknowledgement is dropped, the sender will never receive the acknowledgement and the timer will expire and resend the corresponding data packet. However, if there exists a malicious user in between both hosts and is dropping every data packet or acknowledgement that passes through him, nothing is guaranteed.</t>
+</section>
+
+<section title="Session establishment and Session Teardown">
+<t>Session is established through a three way handshake. The side initiating a data transfer will send a special SYN packet, notifying the receiver that he wishes to establish a session. The side that receives the SYN packet will respond with a SYNACK packet if he wishes to accept his session request. This packet is notifying the initiator that the receiver accepts his session establishment request. The initiator will then respond with an ACK packet and send it to the receiver. This notifies the receiver that the initiator will now send data packets.</t>
+
+<t>It is important to note that these session establishment packets are subject to natural errors. If at any point, these packets are dropped, we must resend the packets to establish a session. If a SYN packet is dropped, the initiator will not receive a SYNACK packet and with a timeout, will resend the SYN packet. If the SYNACK packet is dropped, the initiator will similarly resend a SYN packet. It makes no difference if the last ACK packet is dropped. The server should not wait for an ACK packet before accepting data.</t>
+
+	<t>If a host has received more than one connection, PEEP will perform this handshake with the connecting host, even if it is attempting to make a connection to a host it has previously established a session with. This means that a host can have more than 1 session to a particular host.</t>
+
+
+<t>Session teardown is initiated by a RIP packet. Both hosts, receiving and sending, can send a RIP packet signifying a session termination request. The recipient of that RIP packet will then respond with a RIPACK. Any remaining data that needs to be sent will be sent. Upon being properly ACKed, the host that received the initial RIP packet will send another RIP packet to the client and close the connection.</t>
+
+<t>In this instance, if the first RIP packet is dropped, the initiator will resend the RIP packet until a RIPACK is received. If the second RIP packet is dropped, It will not wait for the second RIPACK. This may be confusing on the receiving side. If this RIPACK is dropped, it should not matter. Upon sending or receiving the second RIP, the protocol will close.</t>
+</section>
+
+<section title="Data Communication">
+<t>Data is sent as a part of a data packet. After the session has been established through the handshake, the sender will start sending data packets. Data packets have their sequence number attached to the packet to determine the order of many data packets. The side that receives the data packet will respond with an acknowledgement number corresponding to the data packet sequence number.</t>
+</section>
+
+<section title="Security">
+<t>PEEP does not provide any security at the moment. PEEP only guarantees in-order delivery of data. Some notable attacks that PEEP is susceptible to include denial of service, session hijacking, and data altering. In the future, we, the PETF (Playground Engineering Task Force), will discuss potential security features for PEEP, such as authentication or confidentiality.</t>
+</section>
+
+</section>
+
+<section title="Functional Specifications">
+
+<section title="PEEP Packet Header format">
+<t> PEEP packet header format</t>
+<t>PEEP Packet are packets transferred between the PEEP layer, including the session establishment, data packets, and teardown packets.
+</t>
+ <t>     +-+-+-+-+-+-+-+-+-+-+-+-+-+</t>
+ <t>     | Type   |     Checksum   |             </t>                                               
+  <t>    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</t>
+ <t>     |         SequenceNumber      |       Acknowledgement           |</t>
+ <t>     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</t>
+ <t>     |                Data                                           |</t>
+ <t>     |                                                               |</t>
+ <t>     |                                                               |</t>
+ <t>     |                                                               |</t>
+ <t>     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</t>
+<t>Type (8 bytes): Denotes the type of packet and the purpose of each packet.</t>
+<t><list style="numbers">
+	<t>SYN(0) - The initial handshake message sent by the initiator to request establishment of a session</t>
+	<t>SYNACK(1) - The packet transmitted by the receiver to acknowledge the initial SYN packet from the client</t>
+	<t>ACK(2) - The final step of handshake sent by the initiator, acknowledging the SYNACK</t>
+	<t>RIP(3) - The packet type sent by either the initiator or the receiver to indicate a termination of the established session</t>
+	<t>RIPACK(4) - The packet type indicating that a RIP packet has been received</t>
+	<t>DATA - The packet type indicating the existence of application data in the packet</t>
+</list></t>
+<t>SequenceNumber (32 bytes): Denotes the index of the current packet in a session</t>
+<t>Checksum (16 bytes): The checksum verifies that the packet has been fully transmitted and has not been altered by natural errors</t>
+<t>Acknowledgement (32 bytes): The acknowledgement number indicates to the sender which portions of data has been received</t>
+<t>Data (1024 bytes at maximum): The actual data being transmitted. PEEP will segment the data into chunks of a maximum size of 1024 bytes. Each data packet will contain a chunk</t>
+</section>
+
+<section title="Sequence Number">
+<t>Every data packet transmitted has a sequence number. The acknowledgement mechanism employed here is cumulative. Specifically, if a sender receives an acknowledgement number x in an acknowledgement packet, the sender will know that the receiver has successfully received all the corresponding data up to, but not including x.</t>
+
+<t>How it works:</t>
+<t>In the three way handshake, the initiator will send a sequence number x along with the SYN packet. The SYNACK packet will include an acknowledgement number of x+1 and a sequence number of y. The sequence numbers x and y can be randomly generated or start from 0. The ACK sent from the initiator will include a sequence number x+1 and an acknowledgement number y+1.</t>
+<t>During data transmission, the first sequence number of the first packer is still set to x+1 and data is attached to the packet. The acknowledgement expected is x+1+length(data). This notifies the sender that the receiver has successfully received the data corresponding to x+1 to x+1+length(data).</t>
+</section>
+
+<section title="State Machine">
+	<t>Part 1: Handshake</t>
+  <t>We will refer to the host that wishes to establish a connection as the initiator and the host that listens to incoming connections as the receiver.</t>
+  <t>Both hosts start in this state.</t>
+  <t>Initiator:
+The side that wishes to establish a connection, the initiator, will send a SYN packet. Upon receiving a SYNACK, the initiator will move to the transmission state. If this SYN packet is dropped and a SYNACK is not received within a certain timeout, the SYN packet will be resent. If the initiator receives any other types of packets from the same source, it will ignore it.
+</t>
+  <t>Receiver:
+The receiver listens to incoming SYN packets. If a SYN packet is received, the receiver will send a SYNACK. Upon receiving an ACK packet, the receiver will move to the transmission state. If this SYNACK packet is dropped or the ACK packet is dropped, the receiver is not responsible for resending a SYNACK. The initiator will resend the SYN and retry session establishment.
+If the receives any other types of packets from the same source, it will ignore it.
+</t>
+
+	<t>Part 2: Transmission</t>
+  <t>Both hosts will perform the same functions in this state.
+  Once a host has data it wishes to send, it will send a packet with the type set to Data and the data we were sending is attached in the data section of the PEEP packet. This data packet will also have a sequence number set.</t>
+  <t>
+  Upon receiving a data packet, a host will extract the application data in the packet and pass the data to the application layer if it is in order. If data is received out of order, PEEP will reorder the application data before it is passed to the application. Then the receiver will send an acknowledgement packet with the acknowledgement field set.
+</t>
+	<t>Part 3: Teardown</t>
+  <t>We will refer to the host that wishes to teardown a connection as the initiator and the host that receives the request as the receiver. Both sides can expect an initial RIP packet during the transmission state.</t>
+  <t>The initiator sends a RIP packet. Ideally, this is performed when all the desired data has been sent or received. After the RIP packet is sent, the initiator will wait for a RIPACK and resend a RIP if a RIPACK has not been received.</t>
+  <t>Then, after all the data has been sent between the two hosts, the receiver will send another RIP packet. The initiator will also wait for that RIP packet and upon receiving the RIP packet, send a RIPACK and terminate the connection.</t>
+<t>The Client-Server state machine diagram:</t>
+
+   <t>(closed)                       (closed)</t>
+  <t> 0                              0 </t>
+  <t> Client ----------SYN--------- Server</t>
+  <t> 1                              0</t>
+  <t> Client -------SYNACK--------  Server</t>
+  <t> 1                              1</t>
+  <t> Client ----------ACK---------> Server</t>
+  <t> 2                              1</t>
+  <t> 2                              2 (After receiving the client ACK packet)</t>
+  <t> Client ----------DATA--------> Server</t>
+  <t> 2                              2</t>
+  <t> Client ---------ACK---------  Server</t>
+  <t> 2                              2</t>
+  <t>       (Data transmission)</t>
+  <t> 2                              2</t>
+  <t> Client -----------RIP--------> Server</t>
+  <t> 3                              2</t>
+  <t> Client ------RIPACK---------  Server</t>
+  <t> 3                              2</t>
+  <t> Client ---------DATA--------  Server</t>
+  <t> 3                              2</t>
+  <t> Client ----------ACK---------> Server</t>
+  <t> 3                              2</t>
+  <t>       (Remaining Buffer transmission)</t>
+  <t> 3                              2</t>
+  <t> Client -----------RIP-------- Server</t>
+  <t> 3                              3</t>
+  <t> Client --------RIPACK--------> Server</t>
+  <t> 3                              3</t>
+  <t>(close)                         (close)</t>
+
+</section>
+
+<section title="Establishing Connection">
+<t>The three-way handshake is the procedure used to establish the connection. When two separate processes simultaneously establish connections with one server, it can be handled well. When the same process tries to establish a connection with the same server multiple times by sending multiple SYN packets, only the first attempt will be recorded. Because the server will only respond to a client SYN packet when it is in the initial state. If the server has already responded to a client SYN packet, its state immediately changes to the transmission state after sending back the SYNACK packet.</t>
+
+<t>How a connection is established:</t>
+<t>Scenario 1: The simplest three-way handshake is shown below:</t>
+
+ <t>  (closed)                       (closed)</t>
+ <t>  0                              0 </t>
+ <t>  Client ----------SYN---------> Server</t>
+ <t>         [seq=x] </t>
+ <t>  1                              0</t>
+ <t>  Client -------SYNACK--------- Server</t>
+ <t>         [ack=x+1][seq=y]</t>
+ <t>  (client opens upper layer connection)</t>
+ <t>  1                              1</t>
+ <t>  Client ----------ACK---------> Server</t>
+  <t>        [ack=y+1][seq=x+1]</t>
+  <t> (server opens upper layer connection)</t>
+  <t> 2                              1</t>
+  <t> 2                              2 (After receiving the client ACK packet)</t>
+ <t>  Client ----------DATA--------> Server</t>
+ <t>  2                              2</t>
+
+<t>Scenario 2: If the client sends out the initial SYN packet and SYNACK is never received, the client re-sends the SYN packet to the server because the SYN timer has expired.</t>
+
+
+ <t>  (closed)                       (closed)</t>
+ <t>  0                              0 </t>
+ <t>  Client ----------SYN---------> Server</t>
+<t>          [seq=x]</t>
+<t>   1                              0</t>
+<t>   (time out)</t>
+ <t>  Client ----------SYN---------> Server</t>
+ <t>         [seq=x] </t>
+ <t>  1                              0</t>
+ <t>  Client -------SYNACK--------  Server</t>
+ <t>         [ack=x+1][seq=y]</t>
+ <t>  (client opens upper layer connection)</t>
+ <t>  1                              1</t>
+ <t>  Client ----------ACK---------> Server</t>
+ <t>         [ack=y+1][seq=x+1]</t>
+  <t> (server opens upper layer connection)</t>
+  <t> 2                              1</t>
+  <t> 2                              2 (After receiving the client ACK packet)</t>
+  <t> Client ----------DATA--------> Server</t>
+  <t> 2                              2</t>
+
+<t>Scenario 3: If the server sends out the SYNACK packet and ACK is never received, the server clears its state and discards the connection after the SYNACK timer has expired:</t>
+
+   <t> (closed)                       (closed)</t>
+  <t>  0                              0 </t>
+  <t>  Client ----------SYN---------> Server</t>
+  <t>         [seq=x] </t>
+  <t>  1                              0</t>
+  <t>  Client -------SYNACK--------  Server</t>
+  <t>         [ack=x+1][seq=y]</t>
+   <t> (client opens upper layer connection)</t>
+   <t> 1                              1</t>
+   <t> (time out)</t>
+   <t> (server closes the connection because it never hears back from the client)</t>
+   <t> 1                              0</t>
+   <t> (client closes the connection because server cannot be reached)</t>
+   <t> 0                              0</t>
+   <t> (closed)                       (closed)</t>
+
+</section>
+
+<section title="Closing Connection">
+<t>When either side has no more data to transmit, it will signal the end of the session by sending a RIP packet. Upon receiving a RIP packet, a host will send a RIPACK packet back. The sender will clear the buffer by sending the remaining packets to the client and wait for the client ACKs for those transmissions. After the server has finished sending those packets, it will send a RIP packet to the client side and start a timer. If the timer expires before receiving a RIPACK, the server will close the connection automatically. Once the client receives a RIP, it will send a RIPACK and close the connection. The reason why we change the timer function during teardown for the server is because any of the RIP and RIPACK packets can be dropped and we do not want to leave any side hanging. To prevent a permanent hang, we automatically close the connection.</t>
+<t>How the connection is closed:</t>
+
+</section>
+
+<section title="Reliable Communication">
+<t>The PEEP layer will make sure of the reliability and ordered delivery of the data stream sent over the connection. The transmission is made reliable using the sequence numbers and acknowledgements. With each chunk of sent data, a sequence number will also be transmitted. As defined in section 3.c, the sequence number of the packets follow a specific protocol. For every packet received, the receiver will send an acknowledgment to the sender. The acknowledgment is the next expected sequence number and a confirmation that all the preceding packets has been received.</t>
+<t>Handling loss of data packets:</t>
+<t>Once a packet has been sent, a timer will be started for that sequence number. If the sender does not receive an ACK for that packet, it will retransmit the packet once the timer runs out. This will make sure that each packet is delivered. On the receiver side, if it receives a packet out of order, the receiver can save the out of order packet until the right data packet has been received or simply drop the packet. Either option does not affect the guarantee of reliability.</t>
+<t>Handling loss of acknowledgements:</t>
+<t>Consider this scenario:</t>
+<t>A sender sends packet A and packet B. The receiver send an ACK for packet A and for packet B. The ACK for packet A is dropped, but the ack for packet B has arrived. Because we are using cumulative ACKs, when the sender receives the ACK for packet B, the sender will also know that packet A has been received even though the ACK for packet A is dropped. The sender will not need to resend packet A.</t>
+</section>
+
+<section title="Interfaces">
+<t>There are two types of interfaces involved here. The application-PEEP interface and the PEEP-wire interface. The PEEP-wire interface details can be found in the specification of the Playground network. We are discussing our application-level/PEEP interface:</t>
+<t>Open: The application level connection will only be opened when the PEEP layer allows it to open. During the three way handshake steps, the PEEP Client opens the client application-level connection when it receives a SYNACK message from the PEEP Server. The PEEP Server opens the server application-level connection when it receives an ACK message from the PEEP Client.</t>
+<t>Write: Whenever the application-level protocol wants to send data to another host, it will write data to the PEEP layer and the data will be segmented into chunks of 1024 bytes and be transmitted to the peer protocol in the PEEP layer.</t>
+<t>Receive: When PEEP receives data, it will ensure that the packets have a correct checksum and passes the received data to the application layer, in order.</t>
+<t>Close: Whenever the application-level protocol closes the connection, the PEEP layer connection handles the closing request gracefully. If there are remaining packets left to send, it will make sure they are transmitted correctly before the connection is completely closed.</t>
+</section>
+
+<section title="Event Processing">
+<t>The activities of PEEP can be characterized as responding to events. The possible events that could occur is as follows:</t>
+<t>Application-level calls:</t>
+<t><list style="symbols">
+    	<t>Write</t>
+    	<t>Close</t>
+ </list></t>
+
+<t>Arriving packets:</t>
+<t><list style="symbols">
+    	<t>Data Received</t>
+    </list></t>
+
+<t>Timeouts</t>
+<t><list style="symbols">
+    	<t>Wait timeout</t>
+    	<t>Transmission timeout</t>
+    	<t>Retransmission timeout</t>
+    </list></t>
+
+</section>
+
+</section>
+
+
+
+   <section title="General Authoring Guidelines">
+    <t>The most important aspect of a PRFC is the clarity and correctness of
+    the writing. The next most important component is the completeness of the
+    technical document in describing all relevant information. The last and
+    least important element is the formatting according to RFC guidelines.</t>
+    
+    <t>In terms of writing clearly and correctly, consider the following suggestions.</t>
+    
+    <t><list style="numbers">
+      <t>Use formal English grammar and use it correctly</t>
+      <t>Prefer conciseness and simplicity</t>
+      <t>Get to the point</t>
+    </list></t>
+    
+    <t>Although the formatting is the least important element, authors SHOULD 
+    learn and employ the correct formatting as much as possible. Most of this
+    document will focus on these elements</t>
+    
+    <t>Authors MUST, after reading this PRFC, review any RFC's that are
+    referenced. Authors SHOULD search for other RFC's that provide RFC-authoring
+    guidelines or instructions as well as for other RFC-authoring guides and
+    tutorials that can be found on the Internet.</t>
+    
+    <t>Astute readers will observe that this document is also not perfectly
+    aligned with RFC standards and even technical writing guidelines. Similarly,
+    it is not expected that other PRFC's will be perfect either. Nevertheless,
+    authors MUST make good-faith efforts to understand the principles behind
+    RFC documents and demonstrate them in crafting their own PRFC's.</t>
+
+
+
+    <section title="Meta Data">
+    <t>At the top of all PRFC's is meta-data analogous to the meta-data at the
+    top of an RFC.</t>
+    
+    <t><list style="symbols">
+    	<t>The PRFC SHOULD include the author's name.</t>
+    	<t>The PRFC MUST identify "JHU Network Security Fall 2017" as the
+    	organization</t>
+    	<t>The PRFC MUST NOT identify a student's actual address. Use, instead,
+    	a John Hopkins office number or laboratory name.</t>
+    	<t>The PRFC MUST identify the month and year of writing.</t>
+    </list></t>
+    
+    <t>Additional meta data includes the "References" and "Author's Address"
+    sections. These elements MUST conform to RFC specifications.</t>
+    </section>
+    
+    <section title="Copyright Information">
+    <t>The PLAYGROUND experiment is still new and has not yet developed
+    a policy that has been reviewed by legal counsel. However, at present,
+    the following text MUST be used in the PRFC's.</t>
+    
+    <t>The copyright notice on the front page of the PRFC should read:
+    "Copyright (c) 2017 SETH JAMES NIELSON.  All rights reserved.</t>
+
+   <t>This document is used solely for educational purposes.  Any citations
+   within this document are also for educational purposes and also for
+   technical reference.  If any of these cited elements are protected
+   under copyright, their inclusion here falls under Fair Use
+   provisions."</t>
+   
+   <t>Student authors MUST grant copyrights to SETH JAMES NIELSON. However,
+   they may also retain copyrights for themselves and add their names to the
+   copyright notice accordingly.</t>
+   
+   <t> The final page of the PRFC MUST include a section entitled 
+   "Full Copyright Statement" that reads:</t>
+   
+   <t>"Copyright (C) Seth James Nielson (2017).  All Rights Reserved.</t>
+
+   <t>This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the PLAYGROUND experiment or
+   other associated organizations, except by explicit permission.</t>
+
+   <t>The limited permissions granted above are perpetual and will not be
+   revoked by SETH JAMES NIELSON or his successors or assigns.</t>
+
+   <t>This document and the information contained herein is provided on an
+   "AS IS" basis and SETH JAMES NIELSON and associated academic
+   institutions DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE."</t>
+   
+   <t>After the "Full Copyright Statement" the PRFC MUST include a section
+   entitled "Intellectual Property" that reads:</t>
+
+   <t>The PLAYGROUND framework and student submissions for PLAYGROUND are
+   intended to be free of any intellectual property conflicts.  All
+   submitting parties, especially students, are not allowed to submit
+   source code, specifications, or other components that are known to be
+   protected by copyright, patents, or other IP mechanisms.  Students
+   submitting creative content grant shared rights and ownership of
+   their content to the PLAYGROUND project.  Specifically, any
+   submission can be used in future educational settings including
+   subsequent PLAYGROUND experiments.</t>
+
+   <t>Any interested party is invited to bring to the experiment director's
+   attention any copyrights, patents or patent applications, or other
+   proprietary rights which may cover technology that may be currently
+   in use without permission.</t>
+
+   <t>It should be noted that these statements have not been reviewed by
+   legal counsel.  Moreover, the academic institutions at which
+   PLAYGROUND experiments take place may have additional or even
+   conflicting copyright and intellectual property rules.  Accordingly,
+   concerned parties may need to contact their own lawyer and/or
+   resources at their institution to understand the rights and
+   limitations associated with code donated to a PLAYGROUND experiment."</t>
+   
+   <t>As with the initial copyright notice, the Copyright assignment to
+   Seth James Nielson can be agumented the the names of the authors.</t>
+    </section>
+    
+	<section title="Guidelines for Writing Standards">
+		<t>Most of the guidelines for writing standards are the same as they
+		are for RFC's. In particular, <xref target="RFC2360">RFC 2360</xref>
+		provides the current best practices for writing Internet Standards.
+		In general, RFC 2360 will provide the basic template for evaluating 
+		PRFC's that specify a standard.</t>
+		
+		<t>Perhaps the most important section of RFC 2360 is "2.1 Discussion of
+		Security." Authors MUST read and understand this information. PRFC's without
+		an adequate discussion of security will be rejected.</t>
+		
+		<t>Certain sections of RFC 2360 do not apply to writing PRFC's. These
+		include:</t>
+		
+		<t><list style="empty">
+			<t>2.5 Change Logs</t>
+			<t>2.13 IANA Considerations</t>
+			<t>2.14 Network Management Considerations</t>
+			<t>2.17 Internationalization</t>
+		</list></t>
+		
+		<t>For PRFC's that will serve as standards, the status MUST read: "
+		This document specifies a Playgrounds standards track protocol for
+   the Playground Experiment, and requests discussion and suggestions
+   for improvements.  Distribution of this memo is unlimited."</t>
+		
+	</section>
+	
+	<section title="Guidlines for Writing Non-Standards">
+		<t>PRFC's that are not standards track will not be held to the same
+		requirements. In particular, while it would be great if these PRFC's
+		tracked RFC guidelines, it is not required.</t>
+		
+		<t>For documents that comprise "best current practices," the status
+		of the PRFC MUST read: "This document specifies an Playground Best Current Practices for the Playground
+Experiment, and requests discussion and suggestions for improvements.
+Distribution of this memo is unlimited."</t>
+
+		<t>For documents that are for information purposes only, the status
+		of the PRFC MUST read: "This memo provides information for the Playground Experiment.
+It does not specify an Playground standard of any kind.
+Distribution of this memo is unlimited."</t>
+
+		<t>For documents that specify experimental protocols, 
+		the status of the PRFC MUST read: "This memo defines an Experimental Protocol for the Playground Experiment.
+It does not specify a Playground standard of any kind.
+Discussion and suggestions for improvement are requested.
+Distribution of this memo is unlimited."</t>
+
+		<t>For documents that specify information that is kept for historical reasons
+		the status of the PRFC must read: "This memo describes a historic protocol for the Playground Experiment.
+It does not specify a Playground standard of any kind.
+Distribution of this memo is unlimited."</t>
+	</section>
+   </section>
+   
+   <section title="PRFC Submission Process">
+   <t>PRFC's are required whenever PLAYGROUND groups need to interoperate. Some 
+   specifications will be mandated as part of PLAYGROUND development. Under these 
+   circumstances, the PETF will be responsible for approving the standards.</t>
+   
+   <t>In creating these mandated standards, the PETF can either draft the standards
+   and a reference implementation themselves or accept submissions from individual
+   groups. In either case, the final standard must be approved by a majority of the
+   PETF before the PRFC will be officially published.</t>
+   
+   <t>Any group can draft a standard that defines protocols and technologies that
+   are specific to their own PLAYGROUND nodes. Publishing PRFC's is the only acceptable
+   way for two groups to interact with each other. Thus, if a group wishes to make
+   their optional mechanisms available to other groups, they must create a PRFC 
+   publication. These PRFC's do not need the approval of the PETF if they are given
+   "experimental" status. Otherwise, a majority of the PETF must approve the standard
+   in order for it to be given "standards-track" status.</t>
+   
+   <t>PRFC's seeking "informational" status also do not require PETF approval.</t>
+   
+   <t>PRFC's seeking "best current practice" status do require PETF approval.</t>
+   </section>
+   
+   <section title="PRFC Revision Process">
+   <t>Once a PRFC is officially published by the PETF, it cannot be modified further
+   for any reason. A new PRFC must be submitted that identifies the errors and 
+   proposes to "update" or "supercede" the previous document.</t>
+   
+   <t>A PRFC MUST use the "update" reference if the changes do not result in an
+   incompatible protocol and the old protocol is not shown to be insecure. 
+   Changes to PRFC's that are "updates" include:</t>
+   
+   <t><list style="numbers">
+   	<t>Corrections to spelling, grammar, and other wording in the document</t>
+   	<t>Additional details about operations and operational considerations</t>
+   	<t>Additional parameters or interactions to the existing protocol</t>
+   </list></t>
+   
+   <t>A PRFC MUST use the "supercede" reference if the changes result in an incompatible
+   protocol OR if the previous protocol is demonstrated to be insecure.</t>
+   
+   <t>Approval from the PETF MUST be obtained if approval was required for the original
+   PRFC.</t>
+   
+   <t>A PRFC submitted without PETF approval MUST be revised only by the same PLAYGROUND
+   group that submitted the original.</t>
+   </section>
+   
+   <section title="Security Considerations">
+   <t>This specification is a documentation standard and not directly related
+   to the technical security of any protocol.</t>
+   </section>
+ </middle>
+
+ <!--  *****BACK MATTER ***** -->
+
+ <back>
+   <!-- References split into informative and normative -->
+
+   <!-- There are 2 ways to insert reference entries from the citation libraries:
+    1. define an ENTITY at the top, and use "ampersand character"RFC2629; here (as shown)
+    2. simply use a PI "less than character"?rfc include="reference.RFC.2119.xml"?> here
+       (for I-Ds: include="reference.I-D.narten-iana-considerations-rfc2434bis.xml")
+
+    Both are cited textually in the same manner: by using xref elements.
+    If you use the PI option, xml2rfc will, by default, try to find included files in the same
+    directory as the including file. You can also define the XML_LIBRARY environment variable
+    with a value containing a set of directories to search.  These can be either in the local
+    filing system or remote ones accessed by http (http://domain/dir/... ).-->
+
+   <references title="Normative References">
+     <!--?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"?-->
+     <!--&RFC2119;-->
+     
+     &RFC2360;
+     
+   </references>
+
+
+   <!-- Change Log
+
+v00 2006-03-15  EBD   Initial version	
+v06 2010-04-01 TT     Changed ipr attribute values to latest ones. Changed date to
+                     year only, to be consistent with the comments. Updated the 
+                     IANA guidelines reference from the I-D to the finished RFC.  
+                     
+SETH NIELSON:
+  Altered for PLAYGROUND AND PRFC's
+  2016-09-21 SJN PRFC 1
+
+  Updated for Fall 2017
+  2017-10-1
+  -->
+ </back>
+</rfc>
