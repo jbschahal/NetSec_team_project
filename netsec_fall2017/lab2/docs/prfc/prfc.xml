@@ -512,6 +512,28 @@ If the receives any other types of packets from the same source, it will ignore 
 <t>When either side has no more data to transmit, it will signal the end of the session by sending a RIP packet. Upon receiving a RIP packet, a host will send a RIPACK packet back. The sender will clear the buffer by sending the remaining packets to the client and wait for the client ACKs for those transmissions. After the server has finished sending those packets, it will send a RIP packet to the client side and start a timer. If the timer expires before receiving a RIPACK, the server will close the connection automatically. Once the client receives a RIP, it will send a RIPACK and close the connection. The reason why we change the timer function during teardown for the server is because any of the RIP and RIPACK packets can be dropped and we do not want to leave any side hanging. To prevent a permanent hang, we automatically close the connection.</t>
 <t>How the connection is closed:</t>
 
+   <t>       (Data transmission)</t>
+  <t> 2                                2</t>
+  <t> Client -----------RIP----------> Server</t>
+  <t>        [seq=x]</t>
+  <t> 3                                2</t>
+   <t>Client ------RIPACK------------  Server</t>
+  <t>        [ack=x+1]</t>
+  <t> 3                                2</t>
+  <t> Client ---------DATA----------- Server</t>
+  <t> 3                                2</t>
+  <t> Client ----------ACK-----------> Server</t>
+  <t> 3                                2</t>
+  <t>        Remaining Buffer transmission)</t>
+  <t> 3                                2</t>
+  <t> Client -----------RIP---------- Server</t>
+  <t>        [seq=y]</t>
+  <t> 3                                3</t>
+   <t>Client --------RIPACK----------> Server</t>
+   <t>       [ack=y+1]</t>
+   <t>3                                3</t>
+   <t>(close)                          (close)</t>
+
 </section>
 
 <section title="Reliable Communication">
