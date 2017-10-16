@@ -14,7 +14,7 @@ if __name__ == "__main__":
     elif args[0] == 'server':
         loop = asyncio.get_event_loop()
         loop.set_debug(enabled=True)
-        coro = playground.getConnector("lab2_protocoltest").create_playground_server(RandomNumberGameServerProtocol, 8888)
+        coro = playground.getConnector("lab2_protocol").create_playground_server(RandomNumberGameServerProtocol, 8888)
 
         server = loop.run_until_complete(coro)
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     else:
         loop = asyncio.get_event_loop()
         loop.set_debug(enabled=True)
-        coro = playground.getConnector("lab2_protocoltest").create_playground_connection(lambda: RandomNumberGameClientProtocol(loop), args[0], 8888)
+        coro = playground.getConnector("lab2_protocol").create_playground_connection(lambda: RandomNumberGameClientProtocol(loop), args[0], 8888)
 
         socket, client_proto = loop.run_until_complete(coro)
         loop.run_forever()
