@@ -124,8 +124,8 @@ class PEEP_Base(StackingProtocol):
         # TODO: need to append the data, not remove it.
         # Case: if protocol sends 2 consecutive packets, the 2nd packet
         # will replace the first packet.
-        self.data = data
-        self.data_size = len(data)
+        self.data += data
+        self.data_size += len(data)
         self.chunk_size = chunk_size
         self.base_sequence_number = self.sequence_number
         self.window_start = self.base_sequence_number
