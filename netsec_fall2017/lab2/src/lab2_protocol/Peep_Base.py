@@ -13,7 +13,7 @@ class PEEP_Base(StackingProtocol):
     def __init__(self):
         super().__init__()
         self.state = PEEP_Base.INIT
-        self.window_size = 5
+        self.window_size = 100
         self.transport = None
         self.deserializer = None
         self.base_sequence_number = None
@@ -24,7 +24,7 @@ class PEEP_Base(StackingProtocol):
         self.receive_window_start = None
         self.receive_window_end = None
         self.data_size = 0
-        self.data = bytes(1)
+        self.data = bytes()
         self.timers = []
 
     def data_received(self, data):
@@ -49,10 +49,10 @@ class PEEP_Base(StackingProtocol):
         elif typenum == PEEPPacket.DATA and self.state == PEEP_Base.TRANS:
             print('received Data')
             self.handle_data(packet)
-        elif typenum == PEEPPacket.RIP and self.state == PEEP_Base.TRANS:
+        elif typenum == PEEPPacket.RIP:# and self.state == PEEP_Base.TRANS:
             print('received RIP')
             self.handle_rip(packet)
-        elif typenum == PEEPPacket.RIPACK and self.state == PEEP_Base.TEARDOWN:
+        elif typenum == PEEPPacket.RIPACK:# and self.state == PEEP_Base.TEARDOWN:
             print('received RIPACK')
             self.handle_ripack(packet)
         else:
@@ -62,7 +62,8 @@ class PEEP_Base(StackingProtocol):
         print('checksum of SYN is correct')
         packetback = PEEPPacket()
         packetback.Acknowledgement = packet.SequenceNumber + 1
-        packetback.SequenceNumber = random.randint(0,2**16)
+        self.sequence_number = random.randint(0, 2**16)
+        packetback.SequenceNumber = self.sequence_number
         packetback.Type = PEEPPacket.SYNACK
         packetback.updateChecksum()
         self.send_packet(packetback)
@@ -87,12 +88,12 @@ class PEEP_Base(StackingProtocol):
 
     def handle_ack(self, packet):
         print("ack: ", packet.Acknowledgement)
-        i = 0
+#        i = 0
 #        while i < len(self.timers):
 #            timer = self.timers[i]
-#            if timer._callbackArgs.SequenceNumber < packet.Acknowledgement:
-#                self.timers = self.timers[:i-1] + self.timers[i:]
-#                i -= 1
+#            print(timer._callbackArgs[0].SequenceNumber)
+#            if timer._callbackArgs[0].SequenceNumber < packet.Acknowledgement:
+#                timer.cancel()
 #            i += 1
         self.send_window_start = max(self.send_window_start, packet.Acknowledgement)
         self.send_window_end = self.send_window_start + self.window_size * self.chunk_size
@@ -110,34 +111,12 @@ class PEEP_Base(StackingProtocol):
         self.send_packet(ack_packet)
         # TODO: make sure in order
 
-    def handle_rip(self, packet):
-        print('checksum of RIP is correct')
-        # Sending remaining packets back
-        packetback = PEEPPacket()
-        self.Acknowledgement = packet.SequenceNumber + 1
-        packetback.Acknowledgement = self.Acknowledgemen
-        packetback.Type = PEEPPacket.RIPACK
-        packetback.updateChecksum()
-        self.send_packet(packetback)
-        print('sent RIPACK')
-        # TODO: send remaining data
-
-    def handle_ripack(self, packet):
-        # TODO: send the rest of the data
-        packetback = PEEPPacket()
-        packetback.Acknowledgement = packet.SequenceNumber + 1
-        packetback.Type = PEEPPacket.RIP
-        packetback.updateChecksum()
-        self.send_packet(packetback)
-        print('sent rip pt. 2')
-        self.transport.close()
-
     def transmit_data(self, data, chunk_size):
         # TODO: need to append the data, not remove it.
         # Case: if protocol sends 2 consecutive packets, the 2nd packet
         # will replace the first packet.
         self.data = data
-        self.data_size += len(data)
+        self.data_size = len(data)
         self.chunk_size = chunk_size
         self.base_sequence_number = self.sequence_number
         self.send_window_start = self.base_sequence_number
@@ -148,12 +127,6 @@ class PEEP_Base(StackingProtocol):
     def send_window_data(self):
         print('send window data')
         while self.send_window_end - self.send_window_start <= self.window_size * self.chunk_size:
-            print("inside loop")
-            print("wend: ", self.send_window_end)
-            print("wstart: ", self.send_window_start)
-            print("seq#: ", self.sequence_number)
-            print("base seq#: ", self.base_sequence_number)
-
             if self.sequence_number - self.base_sequence_number >= self.data_size:
                 print("all bytes have been sent from me")
                 return
@@ -167,8 +140,9 @@ class PEEP_Base(StackingProtocol):
         packet.Type = PEEPPacket.DATA
         packet.SequenceNumber = self.sequence_number
         packet.Data = self.data[i:i+self.chunk_size]
+        if packet.Data == None:
+            import pdb; pdb.set_trace()
         packet.updateChecksum()
-        print("sending: " , packet.Data)
         print("sending: " , packet.SequenceNumber)
         self.send_packet(packet)
         self.sequence_number += len(packet.Data)
@@ -180,21 +154,83 @@ class PEEP_Base(StackingProtocol):
     def connection_lost(self, exc):
         self.transport.close()
         self.transport = None
+        asyncio.get_event_loop().stop()
 
     def send_packet(self, packet):
-        print('sending packet')
-#        self.timers.append(Timer(Seconds(1), self.send_packet, packet))
+        print('sending packet', packet)
         self.transport.write(packet.__serialize__())
+#        if packet.Type != PEEPPacket.SYN or packet.Type != PEEPPacket.DATA:
+#            return
+#        timer = Timer(Seconds(1), self.send_packet, packet)
+#        self.timers.append(timer)
+#        timer.start()
+
+    def clear_data_buffer(self):
+        while self.sequence_number - self.base_sequence_number < self.data_size:
+            self.send_window_data()
+        rip2 = PEEPPacket(Type=PEEPPacket.RIP)
+        rip2.SequenceNumber = self.sequence_number
+        rip2.updateChecksum()
+        self.send_packet(rip2)
 
     def initiate_teardown(self):
-        # TODO: not sure how to handle the sequence numbers correctly right now
+        rip = PEEPPacket(Type=PEEPPacket.RIP)
+        rip.SequenceNumber = self.sequence_number
+        self.sequence_number += 1
+        rip.updateChecksum()
+        self.state = PEEP_Base.TEARDOWN
+        print("sent first rip")
+        self.send_packet(rip)
+        self.handle_rip = self.handle_second_rip
         pass
+
+    def handle_second_rip(self, packet):
+        ripack = PEEPPacket(Type=PEEPPacket.RIPACK)
+        ripack.SequenceNumber = self.sequence_number
+        ripack.updateChecksum()
+        self.send_packet(ripack)
+        self.transport.close()
+
+    def handle_second_ripack(self, packet):
+        self.transport.close()
+
+    def handle_rip(self, packet):
+        print('checksum of RIP is correct')
+        # Sending remaining packets back
+        self.handle_ripack = self.handle_second_ripack
+        packetback = PEEPPacket()
+        self.Acknowledgement = packet.SequenceNumber + 1
+        packetback.Acknowledgement = self.Acknowledgement
+        packetback.Type = PEEPPacket.RIPACK
+        packetback.updateChecksum()
+        print('sent RIPACK')
+        self.send_packet(packetback)
+        self.clear_data_buffer()
+        self.state = PEEP_Base.TEARDOWN
+        packetback = PEEPPacket()
+        packetback.Type = PEEPPacket.RIP
+        packetback.SequenceNumber = self.sequence_number
+        packetback.updateChecksum()
+        self.send_packet(packetback)
+        # self.transport.close()
+
+    def handle_ripack(self, packet):
+        # TODO: send the rest of the data
+        self.handle_ack(packet)
+#        packetback = PEEPPacket()
+#        packetback.SequenceNumber = packet.Acknowledgement + 1
+#        packetback.Type = PEEPPacket.RIP
+#        packetback.updateChecksum()
+#        self.send_packet(packetback)
+#        print('sent rip pt. 2')
+#        self.transport.close()
 
 
 
 class PEEP_Transport(StackingTransport):
 
     def __init__(self, transport, protocol):
+        super().__init__(transport)
         self._lowerTransport = transport
         self.protocol = protocol
         self.transport = self._lowerTransport
