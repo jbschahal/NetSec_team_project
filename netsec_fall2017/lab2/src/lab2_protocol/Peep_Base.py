@@ -13,12 +13,13 @@ class PEEP_Base(StackingProtocol):
     def __init__(self):
         super().__init__()
         self.state = PEEP_Base.INIT
-        self.window_size = 10
+        self.window_size = 100
+        self.chunk_size = 1024
         self.transport = None
         self.deserializer = None
         self.base_sequence_number = None
         self.sequence_number = None
-        self.acknowledgement = None
+        self.expected_sequence_number = None
         self.send_window_start = None
         self.send_window_end = None
         self.receive_window_start = None
@@ -26,6 +27,7 @@ class PEEP_Base(StackingProtocol):
         self.data_size = 0
         self.data = bytes()
         self.timers = []
+        self.received_data = []
 
     def data_received(self, data):
         # TODO: handle a window of packets
@@ -64,6 +66,7 @@ class PEEP_Base(StackingProtocol):
         packetback.Acknowledgement = packet.SequenceNumber + 1
         self.sequence_number = random.randint(0, 2**16)
         self.base_sequence_number = self.sequence_number + 1
+        self.expected_sequence_number = self.base_sequence_number
         self.send_window_start = self.base_sequence_number
         self.send_window_end = self.base_sequence_number
         packetback.SequenceNumber = self.sequence_number
@@ -78,12 +81,13 @@ class PEEP_Base(StackingProtocol):
         packet_to_send = PEEPPacket()
         packet_to_send.Type = PEEPPacket.ACK
         packet_to_send.SequenceNumber = packet.Acknowledgement
-        self.base_sequence_number = packet.Acknowledgement
+        packet_to_send.Acknowledgement= packet.SequenceNumber+1
+        packet_to_send.updateChecksum()
+        self.base_sequence_number = packet.Acknowledgement + 1
+        self.expected_sequence_number = self.base_sequence_number
         self.send_window_start = self.base_sequence_number
         self.send_window_end = self.base_sequence_number
         self.sequence_number = self.base_sequence_number
-        packet_to_send.Acknowledgement= packet.SequenceNumber+1
-        packet_to_send.updateChecksum()
         print("Sending Back Ack")
         self.send_packet(packet_to_send)
         self.state = PEEP_Base.TRANS # transmission state
@@ -104,21 +108,29 @@ class PEEP_Base(StackingProtocol):
         self.send_window_data()
 
     def handle_data(self, packet):
-        self.acknowledgement = packet.SequenceNumber + len(packet.Data)
+        self.received_data.append(packet)
+        if packet.SequenceNumber == self.expected_sequence_number:
+            self.pass_data_up()
+
         ack_packet = PEEPPacket()
-        ack_packet.Acknowledgement = self.acknowledgement
+        ack_packet.Acknowledgement = self.expected_sequence_number
         ack_packet.Type = PEEPPacket.ACK
         ack_packet.updateChecksum()
-        self.higherProtocol().data_received(packet.Data)
         print("sending ack")
-        print("ack: ", self.acknowledgement)
+        print("ack: ", self.expected_sequence_number)
         self.send_packet(ack_packet)
-        # TODO: make sure in order
 
-    def transmit_data(self, data, chunk_size):
+    def pass_data_up(self):
+        self.received_data.sort(key = lambda packet: packet.SequenceNumber)
+        for packet in self.received_data:
+            if packet.SequenceNumber == self.expected_sequence_number:
+                self.higherProtocol().data_received(packet.Data)
+                self.expected_sequence_number = packet.SequenceNumber + len(packet.Data)
+
+
+    def transmit_data(self, data):
         self.data += data
         self.data_size += len(data)
-        self.chunk_size = chunk_size
         print("transmitting data size: ", self.data_size)
         self.send_window_data()
 
@@ -133,6 +145,7 @@ class PEEP_Base(StackingProtocol):
 
     def send_next_chunk(self):
         print('send next chunk')
+        print(self)
         packet = PEEPPacket()
         i = self.sequence_number - self.base_sequence_number
         packet.Type = PEEPPacket.DATA
@@ -194,8 +207,7 @@ class PEEP_Base(StackingProtocol):
         # Sending remaining packets back
         self.handle_ripack = self.handle_second_ripack
         packetback = PEEPPacket()
-        self.Acknowledgement = packet.SequenceNumber + 1
-        packetback.Acknowledgement = self.Acknowledgement
+        packetback.Acknowledgement = packet.SequenceNumber + 1
         packetback.Type = PEEPPacket.RIPACK
         packetback.updateChecksum()
         print('sent RIPACK')
@@ -222,11 +234,10 @@ class PEEP_Transport(StackingTransport):
         self._lowerTransport = transport
         self.protocol = protocol
         self.transport = self._lowerTransport
-        self.chunk_size = 1024
 
     def write(self, data):
         print("peep transport write")
-        self.protocol.transmit_data(data, self.chunk_size)
+        self.protocol.transmit_data(data)
 
     def close(self):
         self.protocol.initiate_teardown()
