@@ -48,7 +48,7 @@ class PEEP_Base(StackingProtocol):
         elif typenum == PEEPPacket.ACK:# and (self.state == PEEP_Base.TRANS or self.state == PEEP_Base.HANDSHAKE):
             print("received ACK")
             self.handle_ack(packet)
-        elif typenum == PEEPPacket.DATA and self.state == PEEP_Base.TRANS:
+        elif typenum == PEEPPacket.DATA:# and self.state == PEEP_Base.TRANS:
             print('received Data')
             self.handle_data(packet)
         elif typenum == PEEPPacket.RIP:# and self.state == PEEP_Base.TRANS:
@@ -95,12 +95,21 @@ class PEEP_Base(StackingProtocol):
         print("connection_made to higher protocol")
         self.higherProtocol().connection_made(PEEP_Transport(self.transport, self))
 
+    def finished_sending_all(self, ack):
+        return ack == self.sequence_number
+
     def handle_ack(self, packet):
         # TODO: sequence number overflow
         if self.state == PEEP_Base.TEARDOWN:
-            if packet.Acknowledgement - self.base_sequence_number:
-                # last packet has been acked, continue teardown
+            if self.finished_sending_all(packet.Acknowledgement):
                 self.finish_teardown()
+#            print("ACK TEAROWN @@@@@@")
+#            print("seq num", self.sequence_number)
+#            print("paacket ack", packet.Acknowledgement)
+#            if packet.Acknowledgement == self.sequence_number:
+#                print("seq num", self.sequence_number)
+#                print("paacket ack", packet.Acknowledgement)
+#                # last packet has been acked, continue teardown
         print("ack: ", packet.Acknowledgement)
         i = 0
         while i < len(self.timers):
@@ -118,6 +127,7 @@ class PEEP_Base(StackingProtocol):
 
         ack_packet = PEEPPacket()
         ack_packet.Acknowledgement = self.expected_sequence_number
+        self.acknowledgement = ack_packet.Acknowledgement
         ack_packet.Type = PEEPPacket.ACK
         ack_packet.updateChecksum()
         print("sending ack")
@@ -194,13 +204,13 @@ class PEEP_Base(StackingProtocol):
     def initiate_teardown(self):
         rip = PEEPPacket(Type=PEEPPacket.RIP)
         rip.SequenceNumber = self.sequence_number
-        self.sequence_number += 1
+        self.expected_sequence_number = self.sequence_number + 1
+#        self.sequence_number += 1
         rip.updateChecksum()
         self.state = PEEP_Base.TEARDOWN
         print("sent first rip")
         self.send_packet(rip)
         self.handle_rip = self.handle_second_rip
-        pass
 
     def handle_second_rip(self, packet):
         ripack = PEEPPacket(Type=PEEPPacket.RIPACK)
@@ -220,11 +230,13 @@ class PEEP_Base(StackingProtocol):
         packetback.Acknowledgement = packet.SequenceNumber + 1
         packetback.Type = PEEPPacket.RIPACK
         packetback.updateChecksum()
-        print('sent RIPACK')
+        print(self, 'sent RIPACK')
         self.send_packet(packetback)
         self.clear_data_buffer()
         # TODO: if last data has been acked, send rip
         self.state = PEEP_Base.TEARDOWN
+        if self.finished_sending_all(self.acknowledgement):
+            self.finish_teardown()
 
     def finish_teardown(self):
         packetback = PEEPPacket()
@@ -236,6 +248,7 @@ class PEEP_Base(StackingProtocol):
 
     def handle_ripack(self, packet):
         # TODO: send the rest of the data
+        pass
         self.handle_ack(packet)
 
 
