@@ -13,7 +13,7 @@ class PEEP_Base(StackingProtocol):
     def __init__(self):
         super().__init__()
         self.state = PEEP_Base.INIT
-        self.window_size = 100
+        self.window_size = 10
         self.chunk_size = 1024
         self.transport = None
         self.deserializer = None
@@ -66,7 +66,7 @@ class PEEP_Base(StackingProtocol):
         packetback.Acknowledgement = packet.SequenceNumber + 1
         self.sequence_number = random.randint(0, 2**16)
         self.base_sequence_number = self.sequence_number + 1
-        self.expected_sequence_number = self.base_sequence_number
+        self.expected_sequence_number = packet.SequenceNumber + 1
         self.send_window_start = self.base_sequence_number
         self.send_window_end = self.base_sequence_number
         packetback.SequenceNumber = self.sequence_number
@@ -83,8 +83,8 @@ class PEEP_Base(StackingProtocol):
         packet_to_send.SequenceNumber = packet.Acknowledgement
         packet_to_send.Acknowledgement= packet.SequenceNumber+1
         packet_to_send.updateChecksum()
-        self.base_sequence_number = packet.Acknowledgement + 1
-        self.expected_sequence_number = self.base_sequence_number
+        self.base_sequence_number = packet.Acknowledgement
+        self.expected_sequence_number = packet.SequenceNumber + 1
         self.send_window_start = self.base_sequence_number
         self.send_window_end = self.base_sequence_number
         self.sequence_number = self.base_sequence_number
@@ -145,6 +145,9 @@ class PEEP_Base(StackingProtocol):
 
     def send_next_chunk(self):
         print('send next chunk')
+        print("self seq num: " , self.sequence_number)
+        print("self base seq num: " , self.base_sequence_number)
+        print("data size: " , self.data_size)
         print(self)
         packet = PEEPPacket()
         i = self.sequence_number - self.base_sequence_number

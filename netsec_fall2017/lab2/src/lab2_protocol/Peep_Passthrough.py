@@ -36,7 +36,7 @@ class PEEP_Client(PEEP_Base):
         packet.Type = PEEPPacket.SYN
         packet.SequenceNumber = self.sequence_number
         packet.updateChecksum()
-        self.transport.write(packet.__serialize__())
+        self.send_packet(packet)
         self.state = PEEP_Client.HANDSHAKE
 
 
