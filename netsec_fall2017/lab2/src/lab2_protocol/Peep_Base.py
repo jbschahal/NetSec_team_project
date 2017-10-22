@@ -8,7 +8,7 @@ from playground.common import Timer, Seconds
 
 class PEEP_Base(StackingProtocol):
 
-    INIT, HANDSHAKE, TRANS, TEARDOWN = [0,1,2,3]
+    INIT, HANDSHAKE, TRANS, TEARDOWN, TEARDOWN_WAIT = [0,1,2,3,4]
 
     def __init__(self):
         super().__init__()
@@ -27,6 +27,7 @@ class PEEP_Base(StackingProtocol):
         self.data_size = 0
         self.data = bytes()
         self.timers = []
+        self.latestack = 0;
         self.received_data = []
 
     def data_received(self, data):
@@ -100,9 +101,12 @@ class PEEP_Base(StackingProtocol):
 
     def handle_ack(self, packet):
         # TODO: sequence number overflow
+        self.latestack = packet.Acknowledgement
         if self.state == PEEP_Base.TEARDOWN:
             if self.finished_sending_all(packet.Acknowledgement):
                 self.finish_teardown()
+        if self.state == PEEP_Base.TEARDOWN_WAIT:
+            self.initiate_teardown()
 #            print("ACK TEAROWN @@@@@@")
 #            print("seq num", self.sequence_number)
 #            print("paacket ack", packet.Acknowledgement)
@@ -202,15 +206,17 @@ class PEEP_Base(StackingProtocol):
             self.send_window_data()
 
     def initiate_teardown(self):
-        rip = PEEPPacket(Type=PEEPPacket.RIP)
-        rip.SequenceNumber = self.sequence_number
-        self.expected_sequence_number = self.sequence_number + 1
-#        self.sequence_number += 1
-        rip.updateChecksum()
-        self.state = PEEP_Base.TEARDOWN
-        print("sent first rip")
-        self.send_packet(rip)
-        self.handle_rip = self.handle_second_rip
+        # wait for previous packets to be acked
+        if self.latestack == self.sequence_number:
+            rip = PEEPPacket(Type=PEEPPacket.RIP)
+            rip.SequenceNumber = self.sequence_number
+            self.expected_sequence_number = self.sequence_number + 1
+#           self.sequence_number += 1
+            rip.updateChecksum()
+            print("sent first rip")
+            self.send_packet(rip)
+            self.state = PEEP_Base.TEARDOWN
+            self.handle_rip = self.handle_second_rip
 
     def handle_second_rip(self, packet):
         ripack = PEEPPacket(Type=PEEPPacket.RIPACK)
@@ -266,4 +272,5 @@ class PEEP_Transport(StackingTransport):
         self.protocol.transmit_data(data)
 
     def close(self):
+        self.protocol.state = PEEP_Base.TEARDOWN_WAIT
         self.protocol.initiate_teardown()
