@@ -95,21 +95,15 @@ class PEEP_Base(StackingProtocol):
         print("connection_made to higher protocol")
         self.higherProtocol().connection_made(PEEP_Transport(self.transport, self))
 
-    def finished_sending_all(self, ack):
-        return ack == self.sequence_number
-
     def handle_ack(self, packet):
         # TODO: sequence number overflow
         if self.state == PEEP_Base.TEARDOWN:
             if self.finished_sending_all(packet.Acknowledgement):
-                self.finish_teardown()
-#            print("ACK TEAROWN @@@@@@")
-#            print("seq num", self.sequence_number)
-#            print("paacket ack", packet.Acknowledgement)
-#            if packet.Acknowledgement == self.sequence_number:
-#                print("seq num", self.sequence_number)
-#                print("paacket ack", packet.Acknowledgement)
-#                # last packet has been acked, continue teardown
+                self.send_rip()
+                self.transport.close()
+        print("ACCKKKKKKK@@@@@@@@")
+        print("state: ", self.state)
+        print("self seq num", self.sequence_number)
         print("ack: ", packet.Acknowledgement)
         i = 0
         while i < len(self.timers):
@@ -117,7 +111,7 @@ class PEEP_Base(StackingProtocol):
             if timer._callbackArgs[0].SequenceNumber < packet.Acknowledgement:
                 timer.cancel()
             i += 1
-        self.send_window_start = packet.Acknowledgement
+        self.send_window_start = max(self.send_window_start, packet.Acknowledgement)
         self.send_window_data()
 
     def handle_data(self, packet):
@@ -159,6 +153,7 @@ class PEEP_Base(StackingProtocol):
             if self.sequence_number - self.base_sequence_number >= self.data_size:
                 print("all bytes have been sent from me")
                 return
+            print("send next chunk")
             self.send_next_chunk()
         print("end send window data")
 
@@ -190,66 +185,65 @@ class PEEP_Base(StackingProtocol):
         asyncio.get_event_loop().stop()
 
     def send_packet(self, packet):
+        print("send packet: ", packet)
         self.transport.write(packet.__serialize__())
-        if packet.Type != PEEPPacket.SYN and packet.Type != PEEPPacket.DATA:
+        if packet.Type != PEEPPacket.SYN and packet.Type != PEEPPacket.DATA and packet.Type != PEEPPacket.RIP:
             return
         timer = Timer(Seconds(1), self.send_packet, packet)
         self.timers.append(timer)
         timer.start()
 
     def clear_data_buffer(self):
-        while self.sequence_number - self.base_sequence_number < self.data_size:
-            self.send_window_data()
+        self.send_window_data()
+#        while self.sequence_number - self.base_sequence_number < self.data_size:
+#            self.send_window_data()
+
+    def finished_sending_all(self, ack):
+        print(self)
+        print("calling finished sending all", ack, self.base_sequence_number, self.data_size)
+        return ack - self.base_sequence_number >= self.data_size
 
     def initiate_teardown(self):
+        print('teardown start')
+        self.state = PEEP_Base.TEARDOWN
+        self.clear_data_buffer()
+        self.handle_rip = self.handle_second_rip
+        if self.finished_sending_all(self.acknowledgement):
+            self.send_rip()
+        print("finished initiate teardown")
+
+    def send_rip(self):
+        print("send rip :", self)
         rip = PEEPPacket(Type=PEEPPacket.RIP)
         rip.SequenceNumber = self.sequence_number
-        self.expected_sequence_number = self.sequence_number + 1
-#        self.sequence_number += 1
+        self.sequence_number += 1
         rip.updateChecksum()
-        self.state = PEEP_Base.TEARDOWN
-        print("sent first rip")
         self.send_packet(rip)
-        self.handle_rip = self.handle_second_rip
 
-    def handle_second_rip(self, packet):
+    def send_rip_ack(self, ack):
         ripack = PEEPPacket(Type=PEEPPacket.RIPACK)
-        ripack.SequenceNumber = self.sequence_number
+        ripack.Acknowledgement = ack
         ripack.updateChecksum()
         self.send_packet(ripack)
-        self.transport.close()
+
+    def handle_rip(self, packet):
+        self.send_rip_ack(packet.SequenceNumber + 1)
+        self.handle_ripack = self.handle_second_ripack
+        self.state = PEEP_Base.TEARDOWN
+        self.clear_data_buffer()
+        if self.finished_sending_all(self.acknowledgement):
+            self.send_rip()
+            self.transport.close()
+
+    def handle_ripack(self, packet):
+        self.handle_ack(packet)
 
     def handle_second_ripack(self, packet):
         self.transport.close()
 
-    def handle_rip(self, packet):
-        print('checksum of RIP is correct')
-        # Sending remaining packets back
-        self.handle_ripack = self.handle_second_ripack
-        packetback = PEEPPacket()
-        packetback.Acknowledgement = packet.SequenceNumber + 1
-        packetback.Type = PEEPPacket.RIPACK
-        packetback.updateChecksum()
-        print(self, 'sent RIPACK')
-        self.send_packet(packetback)
-        self.clear_data_buffer()
-        # TODO: if last data has been acked, send rip
-        self.state = PEEP_Base.TEARDOWN
-        if self.finished_sending_all(self.acknowledgement):
-            self.finish_teardown()
-
-    def finish_teardown(self):
-        packetback = PEEPPacket()
-        packetback.Type = PEEPPacket.RIP
-        packetback.SequenceNumber = self.sequence_number
-        packetback.updateChecksum()
-        self.send_packet(packetback)
+    def handle_second_rip(self, packet):
+        self.send_rip_ack(packet.SequenceNumber + 1)
         self.transport.close()
-
-    def handle_ripack(self, packet):
-        # TODO: send the rest of the data
-        pass
-        self.handle_ack(packet)
 
 
 
