@@ -45,7 +45,7 @@ class PEEP_Base(StackingProtocol):
         elif typenum == PEEPPacket.SYNACK and self.state == PEEP_Base.HANDSHAKE:
             print('received SYNACK')
             self.handle_synack(packet)
-        elif typenum == PEEPPacket.ACK and (self.state == PEEP_Base.TRANS or self.state == PEEP_Base.HANDSHAKE):
+        elif typenum == PEEPPacket.ACK:# and (self.state == PEEP_Base.TRANS or self.state == PEEP_Base.HANDSHAKE):
             print("received ACK")
             self.handle_ack(packet)
         elif typenum == PEEPPacket.DATA and self.state == PEEP_Base.TRANS:
@@ -97,6 +97,10 @@ class PEEP_Base(StackingProtocol):
 
     def handle_ack(self, packet):
         # TODO: sequence number overflow
+        if self.state == PEEP_Base.TEARDOWN:
+            if packet.Acknowledgement - self.base_sequence_number:
+                # last packet has been acked, continue teardown
+                self.finish_teardown()
         print("ack: ", packet.Acknowledgement)
         i = 0
         while i < len(self.timers):
@@ -185,12 +189,7 @@ class PEEP_Base(StackingProtocol):
 
     def clear_data_buffer(self):
         while self.sequence_number - self.base_sequence_number < self.data_size:
-            print("here looooooop")
             self.send_window_data()
-        rip2 = PEEPPacket(Type=PEEPPacket.RIP)
-        rip2.SequenceNumber = self.sequence_number
-        rip2.updateChecksum()
-        self.send_packet(rip2)
 
     def initiate_teardown(self):
         rip = PEEPPacket(Type=PEEPPacket.RIP)
@@ -224,13 +223,16 @@ class PEEP_Base(StackingProtocol):
         print('sent RIPACK')
         self.send_packet(packetback)
         self.clear_data_buffer()
+        # TODO: if last data has been acked, send rip
         self.state = PEEP_Base.TEARDOWN
+
+    def finish_teardown(self):
         packetback = PEEPPacket()
         packetback.Type = PEEPPacket.RIP
         packetback.SequenceNumber = self.sequence_number
         packetback.updateChecksum()
         self.send_packet(packetback)
-        # self.transport.close()
+        self.transport.close()
 
     def handle_ripack(self, packet):
         # TODO: send the rest of the data
