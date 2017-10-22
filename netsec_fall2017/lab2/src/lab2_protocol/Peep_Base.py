@@ -88,13 +88,13 @@ class PEEP_Base(StackingProtocol):
 
     def handle_ack(self, packet):
         print("ack: ", packet.Acknowledgement)
-#        i = 0
-#        while i < len(self.timers):
-#            timer = self.timers[i]
-#            print(timer._callbackArgs[0].SequenceNumber)
-#            if timer._callbackArgs[0].SequenceNumber < packet.Acknowledgement:
-#                timer.cancel()
-#            i += 1
+        i = 0
+        while i < len(self.timers):
+            timer = self.timers[i]
+            print(timer._callbackArgs[0].SequenceNumber)
+            if timer._callbackArgs[0].SequenceNumber < packet.Acknowledgement:
+                timer.cancel()
+            i += 1
         self.send_window_start = max(self.send_window_start, packet.Acknowledgement)
         self.send_window_end = self.send_window_start + self.window_size * self.chunk_size
         self.send_window_data()
@@ -159,11 +159,11 @@ class PEEP_Base(StackingProtocol):
     def send_packet(self, packet):
         print('sending packet', packet)
         self.transport.write(packet.__serialize__())
-#        if packet.Type != PEEPPacket.SYN or packet.Type != PEEPPacket.DATA:
-#            return
-#        timer = Timer(Seconds(1), self.send_packet, packet)
-#        self.timers.append(timer)
-#        timer.start()
+        if packet.Type != PEEPPacket.SYN or packet.Type != PEEPPacket.DATA:
+            return
+        timer = Timer(Seconds(1), self.send_packet, packet)
+        self.timers.append(timer)
+        timer.start()
 
     def clear_data_buffer(self):
         while self.sequence_number - self.base_sequence_number < self.data_size:
