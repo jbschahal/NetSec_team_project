@@ -205,6 +205,8 @@ class PEEP_Base(StackingProtocol):
         ripack.Acknowledgement = ack
         ripack.updateChecksum()
         self.send_packet(ripack)
+        rip_timer = Timer(Seconds(2), self.abort_connection)
+        rip_timer.start
 
     def handle_rip(self, packet):
         self.send_rip_ack(packet.SequenceNumber + 1)
