@@ -74,7 +74,7 @@ class PEEP_Server(PEEP_Base):
                 self.base_sequence_number = self.sequence_number
                 # open upper layer transport
                 self.higherProtocol().connection_made(PEEP_Transport(self.transport, self))
-        elif self.state == PEEP_Server.TRANS:
+        else:
             super().handle_ack(packet)
 
 

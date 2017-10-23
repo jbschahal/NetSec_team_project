@@ -30,7 +30,6 @@ class PEEP_Base(StackingProtocol):
         self.received_data = []
 
     def data_received(self, data):
-        # TODO: handle a window of packets
         print("data received")
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
@@ -58,7 +57,7 @@ class PEEP_Base(StackingProtocol):
             print('received RIPACK')
             self.handle_ripack(packet)
         else:
-            print('received UNKNOWN TYPE')
+            print('received packet in bad state. type: ', typenum, " state ", self.state)
 
     def handle_syn(self, packet):
         print('checksum of SYN is correct')
@@ -97,19 +96,18 @@ class PEEP_Base(StackingProtocol):
 
     def handle_ack(self, packet):
         # TODO: sequence number overflow
+        self.acknowledgement = packet.Acknowledgement
         if self.state == PEEP_Base.TEARDOWN:
-            if self.finished_sending_all(packet.Acknowledgement):
+            if self.finished_sending_all():
                 self.send_rip()
-                self.transport.close()
-        print("ACCKKKKKKK@@@@@@@@")
-        print("state: ", self.state)
-        print("self seq num", self.sequence_number)
         print("ack: ", packet.Acknowledgement)
         i = 0
         while i < len(self.timers):
             timer = self.timers[i]
             if timer._callbackArgs[0].SequenceNumber < packet.Acknowledgement:
                 timer.cancel()
+                self.timers = self.timers[:i] + self.timers[i+1:]
+                i -= 1;
             i += 1
         self.send_window_start = max(self.send_window_start, packet.Acknowledgement)
         self.send_window_data()
@@ -121,7 +119,6 @@ class PEEP_Base(StackingProtocol):
 
         ack_packet = PEEPPacket()
         ack_packet.Acknowledgement = self.expected_sequence_number
-        self.acknowledgement = ack_packet.Acknowledgement
         ack_packet.Type = PEEPPacket.ACK
         ack_packet.updateChecksum()
         print("sending ack")
@@ -133,8 +130,7 @@ class PEEP_Base(StackingProtocol):
         for packet in self.received_data:
             if packet.SequenceNumber == self.expected_sequence_number:
                 self.higherProtocol().data_received(packet.Data)
-                self.expected_sequence_number = packet.SequenceNumber + len(packet.Data)
-
+                self.expected_sequence_number += len(packet.Data)
 
     def transmit_data(self, data):
         self.data += data
@@ -144,27 +140,15 @@ class PEEP_Base(StackingProtocol):
 
     def send_window_data(self):
         print('send window data')
-        print("self seq num: " , self.sequence_number)
-        print("self base seq num: " , self.base_sequence_number)
-        print("data size: " , self.data_size)
-        print("window start: ", self.send_window_start)
-        print("window end: ", self.send_window_end)
         while self.send_window_end - self.send_window_start < self.window_size * self.chunk_size:
             if self.sequence_number - self.base_sequence_number >= self.data_size:
                 print("all bytes have been sent from me")
                 return
-            print("send next chunk")
             self.send_next_chunk()
         print("end send window data")
 
     def send_next_chunk(self):
         print('send next chunk')
-        print("self seq num: " , self.sequence_number)
-        print("self base seq num: " , self.base_sequence_number)
-        print("data size: " , self.data_size)
-        print("window start: ", self.send_window_start)
-        print("window end: ", self.send_window_end)
-        print(self)
         packet = PEEPPacket()
         i = self.sequence_number - self.base_sequence_number
         packet.Type = PEEPPacket.DATA
@@ -185,7 +169,7 @@ class PEEP_Base(StackingProtocol):
         asyncio.get_event_loop().stop()
 
     def send_packet(self, packet):
-        print("send packet: ", packet)
+        print(self, "send packet: ", packet)
         self.transport.write(packet.__serialize__())
         if packet.Type != PEEPPacket.SYN and packet.Type != PEEPPacket.DATA and packet.Type != PEEPPacket.RIP:
             return
@@ -193,24 +177,22 @@ class PEEP_Base(StackingProtocol):
         self.timers.append(timer)
         timer.start()
 
-    def clear_data_buffer(self):
-        self.send_window_data()
+#    def clear_data_buffer(self):
+#        pass
+#        self.send_window_data()
 #        while self.sequence_number - self.base_sequence_number < self.data_size:
 #            self.send_window_data()
 
-    def finished_sending_all(self, ack):
-        print(self)
-        print("calling finished sending all", ack, self.base_sequence_number, self.data_size)
-        return ack - self.base_sequence_number >= self.data_size
+    def finished_sending_all(self):
+        return self.acknowledgement - self.base_sequence_number >= self.data_size
 
     def initiate_teardown(self):
         print('teardown start')
         self.state = PEEP_Base.TEARDOWN
-        self.clear_data_buffer()
+#        self.clear_data_buffer()
         self.handle_rip = self.handle_second_rip
-        if self.finished_sending_all(self.acknowledgement):
+        if self.finished_sending_all():
             self.send_rip()
-        print("finished initiate teardown")
 
     def send_rip(self):
         print("send rip :", self)
@@ -230,8 +212,8 @@ class PEEP_Base(StackingProtocol):
         self.send_rip_ack(packet.SequenceNumber + 1)
         self.handle_ripack = self.handle_second_ripack
         self.state = PEEP_Base.TEARDOWN
-        self.clear_data_buffer()
-        if self.finished_sending_all(self.acknowledgement):
+#        self.clear_data_buffer()
+        if self.finished_sending_all():
             self.send_rip()
             self.transport.close()
 
