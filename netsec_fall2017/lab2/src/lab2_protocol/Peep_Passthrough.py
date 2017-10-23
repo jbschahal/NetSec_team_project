@@ -34,6 +34,7 @@ class PEEP_Client(PEEP_Base):
         print("peep_client: start handshake")
         packet = PEEPPacket()
         packet.Type = PEEPPacket.SYN
+        packet.Data = "piggyback".encode()
         packet.SequenceNumber = self.sequence_number
         packet.updateChecksum()
         self.send_packet(packet)
