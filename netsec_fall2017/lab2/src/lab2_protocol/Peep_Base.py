@@ -208,20 +208,13 @@ class PEEP_Base(StackingProtocol):
 
     def handle_rip(self, packet):
         self.send_rip_ack(packet.SequenceNumber + 1)
-        self.handle_ripack = self.handle_second_ripack
         self.state = PEEP_Base.TEARDOWN
-        if self.finished_sending_all():
-            self.send_rip()
-            self.transport.close()
-
-    def handle_ripack(self, packet):
-        self.handle_ack(packet)
-
-    def handle_second_ripack(self, packet):
         self.transport.close()
 
-    def handle_second_rip(self, packet):
-        self.send_rip_ack(packet.SequenceNumber + 1)
+    def handle_ripack(self, packet):
+        self.transport.close()
+
+    def abort_connection(self):
         self.transport.close()
 
 
@@ -240,3 +233,6 @@ class PEEP_Transport(StackingTransport):
 
     def close(self):
         self.protocol.initiate_teardown()
+
+    def abort(self):
+        self.protocol.abort_connection()
