@@ -75,6 +75,7 @@ class PEEP_Base(StackingProtocol):
         packetback.updateChecksum()
         self.send_packet(packetback)
         self.state = PEEP_Base.HANDSHAKE
+        # maybe set this state to trans in case the ack in handshake gets dropped
         print('sent SYNACK')
 
     def handle_synack(self, packet):
@@ -207,8 +208,6 @@ class PEEP_Base(StackingProtocol):
         return self.rip_sequence_number == self.expected_sequence_number
 
     def sent_all(self):
-        print("seq num ", self.sequence_number, "base seq", self.base_sequence_number, self.data_size)
-        print("window end", self.send_window_end)
         return self.sequence_number - self.base_sequence_number >= self.data_size
 
     def handle_rip(self, packet):
