@@ -28,6 +28,8 @@ class PEEP_Base(StackingProtocol):
         self.data = bytes()
         self.timers = []
         self.received_data = []
+        self.rip_timer = None
+        self.rip_sequence_number = None
 
     def data_received(self, data):
         print("data received")
@@ -96,10 +98,6 @@ class PEEP_Base(StackingProtocol):
 
     def handle_ack(self, packet):
         # TODO: sequence number overflow
-        self.acknowledgement = packet.Acknowledgement
-        if self.state == PEEP_Base.TEARDOWN:
-            if self.finished_sending_all():
-                self.send_rip()
         print("ack: ", packet.Acknowledgement)
         i = 0
         while i < len(self.timers):
@@ -109,8 +107,20 @@ class PEEP_Base(StackingProtocol):
                 self.timers = self.timers[:i] + self.timers[i+1:]
                 i -= 1
             i += 1
+
+        if self.rip_timer != None:
+            self.rip_timer.cancel()
+            self.rip_timer.extend(Seconds(2))
+            self.rip_timer.start()
+            return
+
         self.send_window_start = max(self.send_window_start, packet.Acknowledgement)
         self.send_window_data()
+
+        if self.state == PEEP_Base.TEARDOWN and self.sent_all():
+            self.send_rip()
+            self.rip_timer = Timer(Seconds(2), self.abort_connection)
+            self.rip_timer.start()
 
     def handle_data(self, packet):
         self.received_data.append(packet)
@@ -124,6 +134,9 @@ class PEEP_Base(StackingProtocol):
         print("sending ack")
         print("ack: ", self.expected_sequence_number)
         self.send_packet(ack_packet)
+
+        if self.state == PEEP_Base.TEARDOWN and self.received_all():
+            self.send_rip_ack(self.rip_sequence_number + 1)
 
     def pass_data_up(self):
         self.received_data.sort(key = lambda packet: packet.SequenceNumber)
@@ -182,15 +195,27 @@ class PEEP_Base(StackingProtocol):
         self.timers.append(timer)
         timer.start()
 
-    def finished_sending_all(self):
-        return self.acknowledgement - self.base_sequence_number >= self.data_size
-
     def initiate_teardown(self):
         print('teardown start')
         self.state = PEEP_Base.TEARDOWN
-        self.handle_rip = self.handle_second_rip
-        if self.finished_sending_all():
+        if self.sent_all():
             self.send_rip()
+            self.rip_timer = Timer(Seconds(2), self.abort_connection)
+            self.rip_timer.start()
+
+    def received_all(self):
+        return self.rip_sequence_number == self.expected_sequence_number
+
+    def sent_all(self):
+        print("seq num ", self.sequence_number, "base seq", self.base_sequence_number, self.data_size)
+        print("window end", self.send_window_end)
+        return self.sequence_number - self.base_sequence_number >= self.data_size
+
+    def handle_rip(self, packet):
+        self.state = PEEP_Base.TEARDOWN
+        self.rip_sequence_number = packet.SequenceNumber
+        if self.received_all():
+            self.send_rip_ack(self.rip_sequence_number + 1)
 
     def send_rip(self):
         print("send rip :", self)
@@ -205,13 +230,6 @@ class PEEP_Base(StackingProtocol):
         ripack.Acknowledgement = ack
         ripack.updateChecksum()
         self.send_packet(ripack)
-        rip_timer = Timer(Seconds(2), self.abort_connection)
-        rip_timer.start
-
-    def handle_rip(self, packet):
-        self.send_rip_ack(packet.SequenceNumber + 1)
-        self.state = PEEP_Base.TEARDOWN
-        self.transport.close()
 
     def handle_ripack(self, packet):
         self.transport.close()
