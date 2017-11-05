@@ -1,14 +1,14 @@
 import asyncio
 import OpenSSL
 import playground
-import CertFactory
+# import .CertFactory
 import hashlib
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
 from playground.network.packet.fieldtypes import UINT8, UINT32, UINT64,\
     STRING, BUFFER, LIST, ComplexFieldType, PacketFields
 from playground.network.packet.fieldtypes.attributes import Optional
-from .PLS_Base import PlsBasePacket, PlsHello, PlsKeyExchange,\
+from .PLS_Packets import PlsBasePacket, PlsHello, PlsKeyExchange,\
     PlsHandshakeDone, PlsData, PlsClose
 
 
@@ -62,7 +62,7 @@ class PLS_Base(StackingProtocol):
         print("pls data received")
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
-            if isinstance(packet, PlsBasePacket) and packet.verifyChecksum():
+            if isinstance(packet, PlsBasePacket):
                 self.handle_packets(packet)
 
     def handle_packets(self, packet):
@@ -108,9 +108,10 @@ class PLS_Base(StackingProtocol):
 
     def pls_close(self):
         close_packet = PlsClose()
-        close_packet.updateChecksum()
         self.send_packet(close_packet)
 
+    def transmit_data(self, data):
+        self.transport.write(data)
 
     def connection_lost(self, exc):
         self.transport.close()
