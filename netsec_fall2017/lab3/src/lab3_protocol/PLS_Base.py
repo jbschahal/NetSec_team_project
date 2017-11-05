@@ -2,6 +2,7 @@ import asyncio
 import OpenSSL
 import playground
 import CertFactory
+import hashlib
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
 from playground.network.packet.fieldtypes import UINT8, UINT32, UINT64,\
@@ -31,12 +32,12 @@ class PLS_Base(StackingProtocol):
         self.transport = None
         self.deserializer = None
         self.state = PLS_Base.INIT
-        self.nonce = None
+        self.client_nonce = None
         self.validation_hash = None
         self.data = None
         self.pkc = None
         self.pks = None
-        self.received_nonce = None
+        self.server_nonce = None
         self.m1 = None
         self.m2 = None
         self.m3 = None
@@ -45,6 +46,13 @@ class PLS_Base(StackingProtocol):
         self.received_pub_key = None
         self.my_priv_key = None
         self.shared_key = None
+
+        self.ekc = None
+        self.eks = None
+        self.ivc = None
+        self.ivs = None
+        self.mkc = None
+        self.mks = None
 
     def connection_made(self, transport):
         self.transport = transport
@@ -77,6 +85,21 @@ class PLS_Base(StackingProtocol):
             print("error: validation hash doesn't match")
             self.pls_close()
         else:
+            block_0 = hashlib.sha1(b"PLS1.0" + self.client_nonce + self.server_nonce + self.pkc + self.pks).digest()
+            block_1 = hashlib.sha1(block_0).digest()
+            block_2 = hashlib.sha1(block_1).digest()
+            block_3 = hashlib.sha1(block_2).digest()
+            block_4 = hashlib.sha1(block_3).digest()
+
+            block = block_0 + block_1 + block_2 + block_3 + block_4
+
+            self.ekc = block[:128]
+            self.eks = block[128:256]
+            self.ivc = block[256:384]
+            self.ivs = block[384:512]
+            self.mkc = block[512:640]
+            self.mks = block[640:768]
+
             self.encrypt_and_send(self.data)
 
     def handle_close(self, packet):
@@ -96,6 +119,9 @@ class PLS_Base(StackingProtocol):
 
     def send_packet(self, packet):
         self.transport.write(packet.__serialize__())
+
+    def encrypt_and_send(self, data):
+        pass
 
 
 class PLS_Transport(StackingTransport):
