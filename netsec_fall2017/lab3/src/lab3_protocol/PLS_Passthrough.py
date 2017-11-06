@@ -7,8 +7,9 @@ from . import CertFactory
 import cryptography
 import OpenSSL
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import serialization, hashes, hmac
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
 from playground.network.packet.fieldtypes import UINT8, UINT32, UINT64,\
@@ -89,6 +90,16 @@ class PLS_Client(PLS_Base):
         hsdone_packet.ValidationHash = self.validation_hash
         self.send_packet(hsdone_packet)
 
+    def handle_hsdone(self, packet):
+        super().handle_hsdone(packet)
+        cli_cipher = Cipher(algorithms.AES(self.ekc), modes.CTR(self.ivc), backend=default_backend())
+        server_cipher = Cipher(algorithms.AES(self.eks), modes.CTR(self.ivs), backend=default_backend())
+        self.data_encryptor = cli_cipher.encryptor()
+        self.data_decryptor = server_cipher.decryptor()
+        self.mac_creator = hmac.HMAC(self.mkc, hashes.SHA1(), backend=default_backend())
+        self.mac_verifier = hmac.HMAC(self.mks, hashes.SHA1(), backend=default_backend())
+        self.higherProtocol().connection_made(PLS_Transport(self.transport, self))
+
 
 class PLS_Server(PLS_Base):
 
@@ -145,7 +156,13 @@ class PLS_Server(PLS_Base):
 
     def handle_hsdone(self, packet):
         super().handle_hsdone(packet)
-        super().connection_made(PLS_Transport(self.transport, self))
+        cli_cipher = Cipher(algorithms.AES(self.ekc), modes.CTR(self.ivc), backend=default_backend())
+        server_cipher = Cipher(algorithms.AES(self.eks), modes.CTR(self.ivs), backend=default_backend())
+        self.data_encryptor = server_cipher.encryptor()
+        self.data_decryptor = cli_cipher.decryptor()
+        self.mac_creator = hmac.HMAC(self.mks, hashes.SHA1(), backend=default_backend())
+        self.mac_verifier = hmac.HMAC(self.mkc, hashes.SHA1(), backend=default_backend())
+        self.higherProtocol().connection_made(PLS_Transport(self.transport, self))
 
 
 clientFactory = StackingProtocolFactory(PLS_Client)

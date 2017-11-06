@@ -1,8 +1,9 @@
 import asyncio
 import OpenSSL
 import playground
-# import .CertFactory
 import hashlib
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
 from playground.network.packet import PacketType
 from playground.network.common import StackingProtocol, StackingTransport, StackingProtocolFactory
 from playground.network.packet.fieldtypes import UINT8, UINT32, UINT64,\
@@ -45,14 +46,16 @@ class PLS_Base(StackingProtocol):
         self.my_pub_key = None
         self.received_pub_key = None
         self.my_priv_key = None
-        self.shared_key = None
-
         self.ekc = None
         self.eks = None
         self.ivc = None
         self.ivs = None
         self.mkc = None
         self.mks = None
+        self.data_encryptor = None
+        self.data_decryptor = None
+        self.mac_creator = None
+        self.mac_verifier = None
 
     def connection_made(self, transport):
         self.transport = transport
@@ -93,14 +96,19 @@ class PLS_Base(StackingProtocol):
 
             block = block_0 + block_1 + block_2 + block_3 + block_4
 
-            self.ekc = block[:128]
-            self.eks = block[128:256]
-            self.ivc = block[256:384]
-            self.ivs = block[384:512]
-            self.mkc = block[512:640]
-            self.mks = block[640:768]
+            self.ekc = block[:128//8]
+            self.eks = block[128//8:256//8]
+            self.ivc = block[256//8:384//8]
+            self.ivs = block[384//8:512//8]
+            self.mkc = block[512//8:640//8]
+            self.mks = block[640//8:768//8]
 
-            self.encrypt_and_send(self.data)
+
+    def handle_data(self, packet):
+        if (self.verify_mac(packet.Ciphertext, packet.Mac)):
+            self.higherProtocol().data_received(self.decrypt_data(packet.Ciphertext))
+        else:
+            self.pls_close()
 
     def handle_close(self, packet):
         self.transport.close()
@@ -113,7 +121,7 @@ class PLS_Base(StackingProtocol):
         self.higherProtocol().connection_lost(None)
 
     def transmit_data(self, data):
-        self.transport.write(data)
+        self.encrypt_and_send(data)
 
     def connection_lost(self, exc):
         self.transport.close()
@@ -123,8 +131,33 @@ class PLS_Base(StackingProtocol):
     def send_packet(self, packet):
         self.transport.write(packet.__serialize__())
 
+    def encrypt_data(self, data):
+        print("encrypt")
+        return self.data_encryptor.update(data)
+
+    def decrypt_data(self, data):
+        return self.data_decryptor.update(data)
+
+    def create_mac(self, data):
+        temp = self.mac_creator.copy()
+        temp.update(data)
+        return temp.finalize()
+
+    def verify_mac(self, data, mac):
+        temp = self.mac_verifier.copy()
+        temp.update(data)
+        try:
+            temp.verify(mac)
+        except cryptography.exceptions.InvalidSignature as e:
+            print(e)
+            return False
+        return True
+
     def encrypt_and_send(self, data):
-        pass
+        data_packet = PlsData()
+        data_packet.Ciphertext = self.encrypt_data(data)
+        data_packet.Mac = self.create_mac(data_packet.Ciphertext)
+        self.send_packet(data_packet)
 
 
 class PLS_Transport(StackingTransport):
@@ -139,7 +172,7 @@ class PLS_Transport(StackingTransport):
         self.protocol.transmit_data(data)
 
     def close(self):
-        self.protocol.initiate_teardown()
+        self.protocol.pls_close()
 
     def abort(self):
-        self.protocol.abort_connection()
+        self.close()
