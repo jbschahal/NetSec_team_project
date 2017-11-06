@@ -109,6 +109,8 @@ class PLS_Base(StackingProtocol):
     def pls_close(self):
         close_packet = PlsClose()
         self.send_packet(close_packet)
+        self.transport.close()
+        self.higherProtocol().connection_lost(None)
 
     def transmit_data(self, data):
         self.transport.write(data)

@@ -74,7 +74,11 @@ class PLS_Client(PLS_Base):
 
     def handle_keyexch(self, packet):
         self.m4 = packet.__serialize__()
-        self.pks = self.my_priv_key.decrypt(packet.PreKey, oaep)
+        try:
+            self.pks = self.my_priv_key.decrypt(packet.PreKey, oaep)
+        except ValueError as e:
+            print(e)
+            self.pls_close()
         hsdone_packet = PlsHandshakeDone()
         messages_hash = hashlib.sha1()
         messages_hash.update(self.m1)
@@ -124,7 +128,11 @@ class PLS_Server(PLS_Base):
 
     def handle_keyexch(self, packet):
         self.m3 = packet.__serialize__()
-        self.pkc = self.my_priv_key.decrypt(packet.PreKey, oaep)
+        try:
+            self.pkc = self.my_priv_key.decrypt(packet.PreKey, oaep)
+        except ValueError as e:
+            print(e)
+            self.pls_close()
         hsdone_packet = PlsHandshakeDone()
         messages_hash = hashlib.sha1()
         messages_hash.update(self.m1)
