@@ -85,7 +85,7 @@ class PLS_Base(StackingProtocol):
             print("error: validation hash doesn't match")
             self.pls_close()
         else:
-            block_0 = hashlib.sha1(b"PLS1.0" + self.client_nonce + self.server_nonce + self.pkc + self.pks).digest()
+            block_0 = hashlib.sha1(b"PLS1.0" + str(self.client_nonce).encode() + str(self.server_nonce).encode() + self.pkc + self.pks).digest()
             block_1 = hashlib.sha1(block_0).digest()
             block_2 = hashlib.sha1(block_1).digest()
             block_3 = hashlib.sha1(block_2).digest()
@@ -104,7 +104,7 @@ class PLS_Base(StackingProtocol):
 
     def handle_close(self, packet):
         self.transport.close()
-        self.higherProtocol().connection_lost()
+        self.higherProtocol().connection_lost(None)
 
     def pls_close(self):
         close_packet = PlsClose()
