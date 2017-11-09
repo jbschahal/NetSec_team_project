@@ -1,5 +1,4 @@
 import random
-import sys
 import os
 import hashlib
 from . import CertFactory
@@ -64,9 +63,9 @@ class PLS_Client(PLS_Base):
 
     def handle_hello(self, packet):
         self.m2 = packet.__serialize__()
+        if not self.verify_certificate_chain(packet.Certs):
+            self.pls_close()
         self.received_pub_key = x509.load_pem_x509_certificate(packet.Certs[0], default_backend()).public_key()
-        # self.received_pub_key = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, packet.Certs[0].decode()).get_pubkey().to_cryptography_key()
-        # TODO: verify certificates
         self.state == PLS_Base.KEYEXCH
         keyexch_packet = PlsKeyExchange()
         self.pkc = "client pre key".encode()
@@ -120,9 +119,9 @@ class PLS_Server(PLS_Base):
 
     def handle_hello(self, packet):
         self.m1 = packet.__serialize__()
+        if not self.verify_certificate_chain(packet.Certs):
+            self.pls_close()
         self.received_pub_key = x509.load_pem_x509_certificate(packet.Certs[0], default_backend()).public_key()
-        # self.received_pub_key = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, packet.Certs[0].decode()).get_pubkey().to_cryptography_key()
-        # TODO: verify certificates
         self.state = PLS_Base.HELLO
         hello_packet = PlsHello()
         self.server_nonce = random.getrandbits(64)
