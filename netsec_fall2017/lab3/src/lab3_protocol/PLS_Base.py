@@ -208,6 +208,7 @@ class PLS_Base(StackingProtocol):
                 past_issuer = current_issuer
                 past_subject = current_subject
         except cryptography.exceptions.InvalidSignature as e:
+            print("----------------------Invalid Signature----------------------")
             return False
         return True
 

@@ -1,3 +1,6 @@
+# TODO: modify so addr is not filename but a.b.c.d address
+
+
 def getPrivateKeyForAddr(addr):
     with open(addr) as fp:
         private_key_user = fp.read()
