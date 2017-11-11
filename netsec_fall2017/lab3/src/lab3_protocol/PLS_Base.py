@@ -174,29 +174,16 @@ class PLS_Base(StackingProtocol):
             for i in range(len(certs)):
                 if past_cert == None and past_pub_key == None:
                     past_cert = crypto.load_certificate(crypto.FILETYPE_PEM, certs[i])
-                    past_subject = past_cert.get_subject()
-                    for (a,b) in past_subject.get_components():
-                        if a == b"CN":
-                            past_subject = b.decode()
-                    past_issuer = past_cert.get_issuer()
-                    for (a,b) in past_issuer.get_components():
-                        if a == b"CN":
-                            past_issuer = b.decode()
+                    past_subject = self.get_cert_subject(past_cert)
+                    past_issuer = self.get_cert_issuer(past_cert)
                     past_cert = past_cert.to_cryptography()
                     past_pub_key = past_cert.public_key()
                     continue
                 if not self.ip_subset(past_subject, past_issuer):
                     return False
                 current_cert = crypto.load_certificate(crypto.FILETYPE_PEM, certs[i])
-                current_subject = current_cert.get_subject()
-                for (a,b) in current_subject.get_components():
-                    if a == b"CN":
-                        current_subject = b.decode()
-                current_issuer = current_cert.get_issuer()
-                for (a,b) in current_issuer.get_components():
-                    if a == b"CN":
-                        current_issuer = b.decode()
-                # checking if current cert is a super of past cert
+                current_subject = self.get_cert_subject(current_cert)
+                current_issuer = self.get_cert_issuer(current_cert)
                 if past_issuer != current_subject:
                     return False
                 current_cert = current_cert.to_cryptography()
@@ -211,6 +198,18 @@ class PLS_Base(StackingProtocol):
             print("----------------------Invalid Signature----------------------")
             return False
         return True
+
+    def get_cert_subject(self, cert):
+        for (a,b) in cert.get_subject().get_components():
+            if a == b"CN":
+                return b.decode()
+        return None
+
+    def get_cert_issuer(self, cert):
+        for (a,b) in cert.get_issuer().get_components():
+            if a == b"CN":
+                return b.decode()
+        return None
 
     def ip_subset(self, subject, issuer):
         subject = subject.split('.')
