@@ -29,9 +29,9 @@ my_cert_path = cert_dir + "my.crt"
 cli_cert_path = cert_dir + "client.crt"
 server_cert_path = cert_dir + "server.crt"
 
-sha256 = cryptography.hazmat.primitives.hashes.SHA256()
-mgf1 = padding.MGF1(sha256)
-oaep = padding.OAEP(mgf1, sha256, None)
+sha1 = cryptography.hazmat.primitives.hashes.SHA1()
+mgf1 = padding.MGF1(sha1)
+oaep = padding.OAEP(mgf1, sha1, None)
 
 
 class PLS_Client(PLS_Base):
@@ -53,9 +53,9 @@ class PLS_Client(PLS_Base):
         cli_hello = PlsHello()
         self.client_nonce = random.getrandbits(64)
         cli_hello.Nonce = self.client_nonce
-        cli_cert = CertFactory.getCertsForAddr(cli_cert_path)
-        my_cert = CertFactory.getCertsForAddr(my_cert_path)
-        root_cert = CertFactory.getCertsForAddr(root_cert_path)
+        cli_cert = CertFactory.getCertsForAddr("20174.1.11.1")
+        my_cert = CertFactory.getCertsForAddr("20174.1.11")
+        root_cert = CertFactory.getCertsForAddr("20174.1")
         cli_hello.Certs = [cli_cert.encode(), my_cert.encode(), root_cert.encode()]
         self.m1 = cli_hello.__serialize__()
         self.send_packet(cli_hello)
@@ -126,9 +126,9 @@ class PLS_Server(PLS_Base):
         hello_packet = PlsHello()
         self.server_nonce = random.getrandbits(64)
         hello_packet.Nonce = self.server_nonce
-        server_cert = CertFactory.getCertsForAddr(server_cert_path)
-        my_cert = CertFactory.getCertsForAddr(my_cert_path)
-        root_cert = CertFactory.getCertsForAddr(root_cert_path)
+        server_cert = CertFactory.getCertsForAddr("20174.1.11.2")
+        my_cert = CertFactory.getCertsForAddr("20174.1.11")
+        root_cert = CertFactory.getCertsForAddr("20174.1")
         hello_packet.Certs = [server_cert.encode(), my_cert.encode(), root_cert.encode()]
         self.m2 = hello_packet.__serialize__()
         self.send_packet(hello_packet)

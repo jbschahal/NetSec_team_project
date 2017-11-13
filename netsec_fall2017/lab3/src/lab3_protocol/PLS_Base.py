@@ -133,7 +133,6 @@ class PLS_Base(StackingProtocol):
     def connection_lost(self, exc):
         self.transport.close()
         self.transport = None
-        asyncio.get_event_loop().stop()
 
     def send_packet(self, packet):
         self.transport.write(packet.__serialize__())
@@ -167,7 +166,10 @@ class PLS_Base(StackingProtocol):
         self.send_packet(data_packet)
 
     def verify_certificate_chain(self, certs):
-        # TODO: manually check the common name, make sure they are a subset of each other
+        if CertFactory.getRootCert("20174.1").encode() != certs[len(certs)-1]:
+            self.pls_close()
+            print("------------------------Root Cert Doesn't Match------------------------")
+            return False
         past_cert = None
         past_pub_key = None
         try:
