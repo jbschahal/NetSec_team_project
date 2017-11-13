@@ -80,6 +80,7 @@ class PLS_Client(PLS_Base):
         except ValueError as e:
             print(e)
             self.pls_close()
+            return
         hsdone_packet = PlsHandshakeDone()
         messages_hash = hashlib.sha1()
         messages_hash.update(self.m1)
@@ -144,6 +145,7 @@ class PLS_Server(PLS_Base):
         except ValueError as e:
             print(e)
             self.pls_close()
+            return
         hsdone_packet = PlsHandshakeDone()
         messages_hash = hashlib.sha1()
         messages_hash.update(self.m1)
