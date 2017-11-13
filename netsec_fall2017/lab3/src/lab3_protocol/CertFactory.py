@@ -26,6 +26,7 @@ key_dict = {
 
 
 def getPrivateKeyForAddr(addr):
+    addr = key_dict[addr]
     with open(addr) as fp:
         private_key_user = fp.read()
     return private_key_user

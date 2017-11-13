@@ -38,12 +38,10 @@ class PLS_Client(PLS_Base):
 
     def __init__(self):
         super().__init__()
-        with open(cli_key_path, "rb") as key_file:
-            self.my_priv_key = serialization.load_pem_private_key(\
-                key_file.read(),\
-                password = None,\
-                backend = default_backend()\
-            )
+        self.my_priv_key = serialization.load_pem_private_key(\
+            CertFactory.getPrivateKeyForAddr("20174.1.11.1").encode(),\
+            password = None,\
+            backend = default_backend())
 
     def connection_made(self, transport):
         super().connection_made(transport)
@@ -107,12 +105,10 @@ class PLS_Server(PLS_Base):
 
     def __init__(self):
         super().__init__()
-        with open(server_key_path, "rb") as key_file:
-            self.my_priv_key = serialization.load_pem_private_key(\
-                key_file.read(),\
-                password = None,\
-                backend = default_backend()\
-            )
+        self.my_priv_key = serialization.load_pem_private_key(\
+            CertFactory.getPrivateKeyForAddr("20174.1.11.2").encode(),\
+            password = None,\
+            backend = default_backend())
 
     def connection_made(self, transport):
         super().connection_made(transport)
