@@ -2,6 +2,10 @@ import asyncio
 import OpenSSL
 import playground
 import hashlib
+import cryptography
+from OpenSSL import crypto
+from . import CertFactory
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from playground.network.packet import PacketType
@@ -12,6 +16,8 @@ from playground.network.packet.fieldtypes.attributes import Optional
 from .PLS_Packets import PlsBasePacket, PlsHello, PlsKeyExchange,\
     PlsHandshakeDone, PlsData, PlsClose
 
+sha256 = cryptography.hazmat.primitives.hashes.SHA256()
+pkcs1v15 = padding.PKCS1v15()
 
 class PLS_Base(StackingProtocol):
 
@@ -88,7 +94,7 @@ class PLS_Base(StackingProtocol):
             print("error: validation hash doesn't match")
             self.pls_close()
         else:
-            block_0 = hashlib.sha1(b"PLS1.0" + str(self.client_nonce).encode() + str(self.server_nonce).encode() + self.pkc + self.pks).digest()
+            block_0 = hashlib.sha1(b"PLS1.0" + self.client_nonce.to_bytes(8, 'big') + self.server_nonce.to_bytes(8, 'big') + self.pkc + self.pks).digest()
             block_1 = hashlib.sha1(block_0).digest()
             block_2 = hashlib.sha1(block_1).digest()
             block_3 = hashlib.sha1(block_2).digest()
@@ -111,6 +117,7 @@ class PLS_Base(StackingProtocol):
             self.pls_close()
 
     def handle_close(self, packet):
+        print("RECEIVED A CLOSE MESSAGE")
         self.transport.close()
         self.higherProtocol().connection_lost(None)
 
@@ -126,7 +133,6 @@ class PLS_Base(StackingProtocol):
     def connection_lost(self, exc):
         self.transport.close()
         self.transport = None
-        asyncio.get_event_loop().stop()
 
     def send_packet(self, packet):
         self.transport.write(packet.__serialize__())
@@ -158,6 +164,69 @@ class PLS_Base(StackingProtocol):
         data_packet.Ciphertext = self.encrypt_data(data)
         data_packet.Mac = self.create_mac(data_packet.Ciphertext)
         self.send_packet(data_packet)
+
+    def verify_certificate_chain(self, certs):
+        if CertFactory.getRootCert("20174.1").encode() != certs[len(certs)-1]:
+            self.pls_close()
+            print("------------------------Root Cert Doesn't Match------------------------")
+            return False
+        past_cert = None
+        past_pub_key = None
+        try:
+            for i in range(len(certs)):
+                if past_cert == None and past_pub_key == None:
+                    past_cert = crypto.load_certificate(crypto.FILETYPE_PEM, certs[i])
+                    past_subject = self.get_cert_subject(past_cert)
+                    past_issuer = self.get_cert_issuer(past_cert)
+                    past_cert = past_cert.to_cryptography()
+                    past_pub_key = past_cert.public_key()
+                    continue
+                if not self.ip_subset(past_subject, past_issuer):
+                    return False
+                current_cert = crypto.load_certificate(crypto.FILETYPE_PEM, certs[i])
+                current_subject = self.get_cert_subject(current_cert)
+                current_issuer = self.get_cert_issuer(current_cert)
+                if past_issuer != current_subject:
+                    return False
+                current_cert = current_cert.to_cryptography()
+                current_pub_key = current_cert.public_key()
+                past_cert_tbs = past_cert.tbs_certificate_bytes
+                current_pub_key.verify(past_cert.signature, past_cert_tbs, pkcs1v15, sha256)
+                past_cert = current_cert
+                past_pub_key = current_pub_key
+                past_issuer = current_issuer
+                past_subject = current_subject
+        except cryptography.exceptions.InvalidSignature as e:
+            print("----------------------Invalid Signature----------------------")
+            return False
+        return True
+
+    def get_cert_subject(self, cert):
+        for (a,b) in cert.get_subject().get_components():
+            if a == b"CN":
+                return b.decode()
+        return None
+
+    def get_cert_issuer(self, cert):
+        for (a,b) in cert.get_issuer().get_components():
+            if a == b"CN":
+                return b.decode()
+        return None
+
+    def ip_subset(self, subject, issuer):
+        subject = subject.split('.')
+        issuer = issuer.split('.')
+        if len(subject) - 1 != len(issuer):
+            print("----------------------Fail IP subset 1----------------------")
+            print("Size doesn't match")
+            return False
+        for i in range(min(len(subject), len(issuer))):
+            if subject[i] != issuer[i]:
+                print("----------------------Fail IP subset 2----------------------")
+                print("Bad subset")
+                return False
+        return True
+
 
 
 class PLS_Transport(StackingTransport):

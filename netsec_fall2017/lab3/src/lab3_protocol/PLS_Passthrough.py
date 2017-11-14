@@ -1,5 +1,4 @@
 import random
-import sys
 import os
 import hashlib
 from . import CertFactory
@@ -30,21 +29,19 @@ my_cert_path = cert_dir + "my.crt"
 cli_cert_path = cert_dir + "client.crt"
 server_cert_path = cert_dir + "server.crt"
 
-sha256 = cryptography.hazmat.primitives.hashes.SHA256()
-mgf1 = padding.MGF1(sha256)
-oaep = padding.OAEP(mgf1, sha256, None)
+sha1 = cryptography.hazmat.primitives.hashes.SHA1()
+mgf1 = padding.MGF1(sha1)
+oaep = padding.OAEP(mgf1, sha1, None)
 
 
 class PLS_Client(PLS_Base):
 
     def __init__(self):
         super().__init__()
-        with open(cli_key_path, "rb") as key_file:
-            self.my_priv_key = serialization.load_pem_private_key(\
-                key_file.read(),\
-                password = None,\
-                backend = default_backend()\
-            )
+        self.my_priv_key = serialization.load_pem_private_key(\
+            CertFactory.getPrivateKeyForAddr("20174.1.11.1").encode(),\
+            password = None,\
+            backend = default_backend())
 
     def connection_made(self, transport):
         super().connection_made(transport)
@@ -54,9 +51,9 @@ class PLS_Client(PLS_Base):
         cli_hello = PlsHello()
         self.client_nonce = random.getrandbits(64)
         cli_hello.Nonce = self.client_nonce
-        cli_cert = CertFactory.getCertsForAddr(cli_cert_path)
-        my_cert = CertFactory.getCertsForAddr(my_cert_path)
-        root_cert = CertFactory.getCertsForAddr(root_cert_path)
+        cli_cert = CertFactory.getCertsForAddr("20174.1.11.1")
+        my_cert = CertFactory.getCertsForAddr("20174.1.11")
+        root_cert = CertFactory.getCertsForAddr("20174.1")
         cli_hello.Certs = [cli_cert.encode(), my_cert.encode(), root_cert.encode()]
         self.m1 = cli_hello.__serialize__()
         self.send_packet(cli_hello)
@@ -64,9 +61,9 @@ class PLS_Client(PLS_Base):
 
     def handle_hello(self, packet):
         self.m2 = packet.__serialize__()
+        if not self.verify_certificate_chain(packet.Certs):
+            self.pls_close()
         self.received_pub_key = x509.load_pem_x509_certificate(packet.Certs[0], default_backend()).public_key()
-        # self.received_pub_key = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, packet.Certs[0].decode()).get_pubkey().to_cryptography_key()
-        # TODO: verify certificates
         self.state == PLS_Base.KEYEXCH
         keyexch_packet = PlsKeyExchange()
         self.pkc = "client pre key".encode()
@@ -83,6 +80,7 @@ class PLS_Client(PLS_Base):
         except ValueError as e:
             print(e)
             self.pls_close()
+            return
         hsdone_packet = PlsHandshakeDone()
         messages_hash = hashlib.sha1()
         messages_hash.update(self.m1)
@@ -108,28 +106,26 @@ class PLS_Server(PLS_Base):
 
     def __init__(self):
         super().__init__()
-        with open(server_key_path, "rb") as key_file:
-            self.my_priv_key = serialization.load_pem_private_key(\
-                key_file.read(),\
-                password = None,\
-                backend = default_backend()\
-            )
+        self.my_priv_key = serialization.load_pem_private_key(\
+            CertFactory.getPrivateKeyForAddr("20174.1.11.2").encode(),\
+            password = None,\
+            backend = default_backend())
 
     def connection_made(self, transport):
         super().connection_made(transport)
 
     def handle_hello(self, packet):
         self.m1 = packet.__serialize__()
+        if not self.verify_certificate_chain(packet.Certs):
+            self.pls_close()
         self.received_pub_key = x509.load_pem_x509_certificate(packet.Certs[0], default_backend()).public_key()
-        # self.received_pub_key = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, packet.Certs[0].decode()).get_pubkey().to_cryptography_key()
-        # TODO: verify certificates
         self.state = PLS_Base.HELLO
         hello_packet = PlsHello()
         self.server_nonce = random.getrandbits(64)
         hello_packet.Nonce = self.server_nonce
-        server_cert = CertFactory.getCertsForAddr(server_cert_path)
-        my_cert = CertFactory.getCertsForAddr(my_cert_path)
-        root_cert = CertFactory.getCertsForAddr(root_cert_path)
+        server_cert = CertFactory.getCertsForAddr("20174.1.11.2")
+        my_cert = CertFactory.getCertsForAddr("20174.1.11")
+        root_cert = CertFactory.getCertsForAddr("20174.1")
         hello_packet.Certs = [server_cert.encode(), my_cert.encode(), root_cert.encode()]
         self.m2 = hello_packet.__serialize__()
         self.send_packet(hello_packet)
@@ -149,6 +145,7 @@ class PLS_Server(PLS_Base):
         except ValueError as e:
             print(e)
             self.pls_close()
+            return
         hsdone_packet = PlsHandshakeDone()
         messages_hash = hashlib.sha1()
         messages_hash.update(self.m1)
