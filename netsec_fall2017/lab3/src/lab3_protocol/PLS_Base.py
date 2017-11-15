@@ -119,13 +119,11 @@ class PLS_Base(StackingProtocol):
     def handle_close(self, packet):
         print("RECEIVED A CLOSE MESSAGE")
         self.transport.close()
-        self.higherProtocol().connection_lost(None)
 
     def pls_close(self):
         close_packet = PlsClose()
         self.send_packet(close_packet)
         self.transport.close()
-        self.higherProtocol().connection_lost(None)
 
     def transmit_data(self, data):
         self.encrypt_and_send(data)
@@ -133,6 +131,7 @@ class PLS_Base(StackingProtocol):
     def connection_lost(self, exc):
         self.transport.close()
         self.transport = None
+        asyncio.get_event_loop().stop()
 
     def send_packet(self, packet):
         self.transport.write(packet.__serialize__())
