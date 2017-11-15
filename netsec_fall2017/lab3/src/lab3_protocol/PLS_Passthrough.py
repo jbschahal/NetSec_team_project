@@ -107,7 +107,7 @@ class PLS_Server(PLS_Base):
     def __init__(self):
         super().__init__()
         self.my_priv_key = serialization.load_pem_private_key(\
-            CertFactory.getPrivateKeyForAddr("20174.1.11.2").encode(),\
+            CertFactory.getPrivateKeyForAddr("20174.1.11.1").encode(),\
             password = None,\
             backend = default_backend())
 
@@ -123,7 +123,7 @@ class PLS_Server(PLS_Base):
         hello_packet = PlsHello()
         self.server_nonce = random.getrandbits(64)
         hello_packet.Nonce = self.server_nonce
-        server_cert = CertFactory.getCertsForAddr("20174.1.11.2")
+        server_cert = CertFactory.getCertsForAddr("20174.1.11.1")
         my_cert = CertFactory.getCertsForAddr("20174.1.11")
         root_cert = CertFactory.getCertsForAddr("20174.1")
         hello_packet.Certs = [server_cert.encode(), my_cert.encode(), root_cert.encode()]

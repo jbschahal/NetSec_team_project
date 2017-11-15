@@ -166,7 +166,6 @@ class PLS_Base(StackingProtocol):
 
     def verify_certificate_chain(self, certs):
         if CertFactory.getRootCert("20174.1").encode() != certs[len(certs)-1]:
-            self.pls_close()
             print("------------------------Root Cert Doesn't Match------------------------")
             return False
         past_cert = None
@@ -176,6 +175,9 @@ class PLS_Base(StackingProtocol):
                 if past_cert == None and past_pub_key == None:
                     past_cert = crypto.load_certificate(crypto.FILETYPE_PEM, certs[i])
                     past_subject = self.get_cert_subject(past_cert)
+                    if self.transport.get_extra_info('peername')[0] != past_subject:
+                        print("----------------------------Host Cert Does Not Match Connection Address----------------------------")
+                        return False
                     past_issuer = self.get_cert_issuer(past_cert)
                     past_cert = past_cert.to_cryptography()
                     past_pub_key = past_cert.public_key()
