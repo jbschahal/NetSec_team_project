@@ -84,13 +84,24 @@ class PEEP_Base(StackingProtocol):
         print('sent SYNACK')
 
     def handle_synack(self, packet):
-        print("Received synack")
+        print("Received synack", packet)
+#        if packet.Acknowledgement != self.sequence_number + 1:
+#            return
+        i = 0
+        while i < len(self.timers):
+            timer = self.timers[i]
+            if timer._callbackArgs[0].SequenceNumber < packet.Acknowledgement:
+                timer.cancel()
+                self.timers = self.timers[:i] + self.timers[i+1:]
+                i -= 1
+            i += 1
         if packet.Data != FIELD_NOT_SET and packet.Data.decode() == "piggyback":
             print("synack: enable piggybacking")
             self.piggyback = True
         packet_to_send = PEEPPacket()
         packet_to_send.Type = PEEPPacket.ACK
-        packet_to_send.SequenceNumber = packet.Acknowledgement
+        packet_to_send.SequenceNumber = self.sequence_number
+#        packet_to_send.SequenceNumber = packet.Acknowledgement
         packet_to_send.Acknowledgement= packet.SequenceNumber+1
         packet_to_send.updateChecksum()
         self.base_sequence_number = packet.Acknowledgement
