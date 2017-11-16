@@ -85,8 +85,8 @@ class PEEP_Base(StackingProtocol):
 
     def handle_synack(self, packet):
         print("Received synack", packet)
-#        if packet.Acknowledgement != self.sequence_number + 1:
-#            return
+        if packet.Acknowledgement != self.sequence_number:
+            return
         i = 0
         while i < len(self.timers):
             timer = self.timers[i]
