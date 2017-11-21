@@ -13,7 +13,7 @@ class PEEP_Base(StackingProtocol):
     def __init__(self):
         super().__init__()
         self.state = PEEP_Base.INIT
-        self.window_size = 100
+        self.window_size = 10
         self.chunk_size = 1024
         self.transport = None
         self.deserializer = None
