@@ -39,7 +39,7 @@ class PLS_Client(PLS_Base):
     def __init__(self):
         super().__init__()
         self.my_priv_key = serialization.load_pem_private_key(\
-            CertFactory.getPrivateKeyForAddr("20174.1.11.1").encode(),\
+            CertFactory.getPrivateKeyForAddr("20174.1.11.1"),\
             password = None,\
             backend = default_backend())
 
@@ -54,7 +54,7 @@ class PLS_Client(PLS_Base):
         cli_cert = CertFactory.getCertsForAddr("20174.1.11.1")
         my_cert = CertFactory.getCertsForAddr("20174.1.11")
         root_cert = CertFactory.getCertsForAddr("20174.1")
-        cli_hello.Certs = [cli_cert.encode(), my_cert.encode(), root_cert.encode()]
+        cli_hello.Certs = [cli_cert, my_cert, root_cert]
         self.m1 = cli_hello.__serialize__()
         self.send_packet(cli_hello)
         self.state = PLS_Base.HELLO
@@ -107,7 +107,7 @@ class PLS_Server(PLS_Base):
     def __init__(self):
         super().__init__()
         self.my_priv_key = serialization.load_pem_private_key(\
-            CertFactory.getPrivateKeyForAddr("20174.1.11.1").encode(),\
+            CertFactory.getPrivateKeyForAddr("20174.1.11.1"),\
             password = None,\
             backend = default_backend())
 
@@ -126,7 +126,7 @@ class PLS_Server(PLS_Base):
         server_cert = CertFactory.getCertsForAddr("20174.1.11.1")
         my_cert = CertFactory.getCertsForAddr("20174.1.11")
         root_cert = CertFactory.getCertsForAddr("20174.1")
-        hello_packet.Certs = [server_cert.encode(), my_cert.encode(), root_cert.encode()]
+        hello_packet.Certs = [server_cert, my_cert, root_cert]
         self.m2 = hello_packet.__serialize__()
         self.send_packet(hello_packet)
         self.state == PLS_Base.KEYEXCH

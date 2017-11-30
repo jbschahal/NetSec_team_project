@@ -29,16 +29,16 @@ def getPrivateKeyForAddr(addr):
     addr = key_dict[addr]
     with open(addr) as fp:
         private_key_user = fp.read()
-    return private_key_user
+    return private_key_user.encode()
 
 def getCertsForAddr(addr):
     addr = cert_dict[addr]
     with open(addr) as fp:
         certs_user = fp.read()
-    return certs_user
+    return certs_user.encode()
 
 def getRootCert(addr):
     addr = cert_dict[addr]
     with open(addr) as fp:
         root_cert_user = fp.read()
-    return root_cert_user
+    return root_cert_user.encode()
