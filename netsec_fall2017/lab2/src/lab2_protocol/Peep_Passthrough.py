@@ -38,8 +38,8 @@ class PEEP_Client(PEEP_Base):
         packet.SequenceNumber = self.sequence_number
         packet.updateChecksum()
         self.send_packet(packet)
+        self.sequence_number += 1
         self.state = PEEP_Client.HANDSHAKE
-
 
 class PEEP_Server(PEEP_Base):
 

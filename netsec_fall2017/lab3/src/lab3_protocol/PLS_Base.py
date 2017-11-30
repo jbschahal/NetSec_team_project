@@ -165,11 +165,9 @@ class PLS_Base(StackingProtocol):
         self.send_packet(data_packet)
 
     def verify_certificate_chain(self, certs):
-        if CertFactory.getRootCert("20174.1").encode() != certs[len(certs)-1]:
-            print("------------------------Root Cert Doesn't Match------------------------")
-            return False
         past_cert = None
         past_pub_key = None
+        certs.append(CertFactory.getRootCert("20174.1"))
         try:
             for i in range(len(certs)):
                 if past_cert == None and past_pub_key == None:
@@ -217,7 +215,7 @@ class PLS_Base(StackingProtocol):
     def ip_subset(self, subject, issuer):
         subject = subject.split('.')
         issuer = issuer.split('.')
-        if len(subject) - 1 != len(issuer):
+        if len(subject) - 1 != len(issuer) and len(subject) != len(issuer):
             print("----------------------Fail IP subset 1----------------------")
             print("Size doesn't match")
             return False
