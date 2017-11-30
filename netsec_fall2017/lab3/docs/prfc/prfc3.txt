@@ -1,0 +1,1436 @@
+
+
+
+Network Working Group                                      S. Cheng, Ed.
+Request for Comments: 1                                   J. Chahal, Ed.
+Category: Standards Track                                   M. Yang, Ed.
+                                                             S. Liu, Ed.
+                                                            N. Ding, Ed.
+                                          JHU Network Security Fall 2017
+                                                           November 2017
+
+
+                  People Enjoy Eavesdropping Protocol
+
+Abstract
+
+   This document specifies Version 1.0 of the Playground Layer Security
+   (PLS) protocol.  The PLS protocol similar to the Transport Layer
+   Security (TLS) protocol and provides authentication, data
+   confidentiality, and data integrity.  PLS shall protect the
+   communications between two hosts from eavesdropping, tampering, or
+   message forgery.
+
+   This PRFC describes the specifications of the PLS protocol, including
+   the functions to be implemented and the interfaces for users to
+   utilize PLS.
+
+   PLS relies on Playground, a tool allows developers to build their own
+   networks, configure their own switches and VNICs (virtual network
+   interface card), and build their own networking protocols.
+
+Status of this Memo
+
+   This document specifies a Playgrounds standards track protocol for
+   the Playground Experiment, and requests discussion and suggestions
+   for improvements.  Distribution of this memo is unlimited.
+
+Copyright Notice
+
+   Copyright (c) 2017 SETH JAMES NIELSON.  All rights reserved.
+
+   This document is used solely for educational purposes.  Any citations
+   within this document are also for educational purposes and also for
+   technical reference.  If any of these cited elements are protected
+   under copyright, their inclusion here falls under Fair Use
+   provisions.
+
+
+
+
+
+
+
+
+Cheng, et al.                Standards Track                    [Page 1]
+
+RFC 1                            PRFC's                    November 2017
+
+
+Table of Contents
+
+   1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . . .  3
+     1.1.  Motivation and Scope . . . . . . . . . . . . . . . . . . .  4
+     1.2.  About this Document  . . . . . . . . . . . . . . . . . . .  4
+     1.3.  Interfaces and Operations  . . . . . . . . . . . . . . . .  4
+   2.  Philosophy . . . . . . . . . . . . . . . . . . . . . . . . . .  6
+     2.1.  Elements of the Network  . . . . . . . . . . . . . . . . .  6
+     2.2.  Relation to other Protocols  . . . . . . . . . . . . . . .  6
+     2.3.  Secure Communications  . . . . . . . . . . . . . . . . . .  7
+       2.3.1.  Symmetric Encryption . . . . . . . . . . . . . . . . .  7
+       2.3.2.  HMAC . . . . . . . . . . . . . . . . . . . . . . . . .  8
+     2.4.  Authenticated Communications . . . . . . . . . . . . . . .  8
+       2.4.1.  Certificates . . . . . . . . . . . . . . . . . . . . .  8
+   3.  Functional Specifications  . . . . . . . . . . . . . . . . . .  9
+     3.1.  PLS Packet Header Format . . . . . . . . . . . . . . . . .  9
+       3.1.1.  PlsHello . . . . . . . . . . . . . . . . . . . . . . .  9
+       3.1.2.  PlsKeyExchange . . . . . . . . . . . . . . . . . . . . 10
+       3.1.3.  PlsHandshakeDone . . . . . . . . . . . . . . . . . . . 10
+       3.1.4.  PlsData  . . . . . . . . . . . . . . . . . . . . . . . 10
+       3.1.5.  PlsClose . . . . . . . . . . . . . . . . . . . . . . . 10
+     3.2.  State Machine  . . . . . . . . . . . . . . . . . . . . . . 10
+       3.2.1.  Initial  . . . . . . . . . . . . . . . . . . . . . . . 10
+       3.2.2.  Hello  . . . . . . . . . . . . . . . . . . . . . . . . 11
+       3.2.3.  Key Exchange . . . . . . . . . . . . . . . . . . . . . 11
+       3.2.4.  Handshake Done . . . . . . . . . . . . . . . . . . . . 11
+       3.2.5.  Secure . . . . . . . . . . . . . . . . . . . . . . . . 12
+       3.2.6.  Close  . . . . . . . . . . . . . . . . . . . . . . . . 12
+     3.3.  Establishing Connection  . . . . . . . . . . . . . . . . . 12
+     3.4.  Closing Connection . . . . . . . . . . . . . . . . . . . . 15
+     3.5.  Data Transmission  . . . . . . . . . . . . . . . . . . . . 16
+     3.6.  Certificates . . . . . . . . . . . . . . . . . . . . . . . 16
+       3.6.1.  Certificate Generation . . . . . . . . . . . . . . . . 16
+       3.6.2.  Certificate verification . . . . . . . . . . . . . . . 16
+     3.7.  Symmetric Key Encryption . . . . . . . . . . . . . . . . . 17
+       3.7.1.  Key Establishment  . . . . . . . . . . . . . . . . . . 17
+       3.7.2.  Encryption . . . . . . . . . . . . . . . . . . . . . . 18
+       3.7.3.  Decryption . . . . . . . . . . . . . . . . . . . . . . 19
+       3.7.4.  Message Authentication Codes (MAC) . . . . . . . . . . 19
+     3.8.  Interfaces . . . . . . . . . . . . . . . . . . . . . . . . 19
+     3.9.  Event Processing . . . . . . . . . . . . . . . . . . . . . 20
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 21
+   Intellectual Property and Copyright Statements . . . . . . . . . . 24
+
+
+
+
+
+
+
+
+Cheng, et al.                Standards Track                    [Page 2]
+
+RFC 1                            PRFC's                    November 2017
+
+
+1.  Introduction
+
+   The Playground Layer Security Protocol (PLS) provides a method to
+   provide authentication, confidentiality, and data integrity for
+   applications who wish to communicate across a network.  The PLS layer
+   is based on Players Enjoy Eavesdropping Protocol (PEEP) which allows
+   the transmitted packet to be received orderly and correctly.
+
+   However, this protocol can be used in conjunction with different
+   protocols, as long as the lower protocol guarantees that packets are
+   delivered and are delivered in order.
+
+   PLS provides security in the form of authentication, confidentiality,
+   and integrity.  We define these properties as follows:
+
+   1.  Authentication: If host A wishes to communicate with host B, then
+       both host A can verify that he is indeed communicating with host
+       B and host B can verify that he is indeed communicating with host
+       A. If there exists a host C pretending to be host A and
+       communicate with host B, host B will be able to determine that an
+       attacker is pretending to be host A and refuse communications
+       with them.
+
+   2.  Confidentiality: All data transmitted using PLS will be
+       encrypted, preventing an attacker from gaining any meaningful
+       information from intercepted packets.  To the attacker, the data
+       will look like random bits.
+
+   3.  Data Integrity: All data transmitted using PLS is tamper evident,
+       preventing an attacker from altering transmitted data without the
+       receiving host from noticing.  If an attacker has attempted to
+       alter the data sent between two hosts, the receiving host will
+       know that the data has been tampered with.
+
+   The PLS protocol is used for encapsulation of various higher-level
+   protocols.  During the handshake process, the client and the server
+   can authenticate each other and exchange the cryptographic keys
+   before transmitting or receiving the data packets.  The PLS protocol
+   provides handshake security that consists of three basic properties:
+
+   1.  The identities of the peer can be verified using the
+       certificates, asymmetric or public key, cryptography.
+
+   2.  The negotiation of pre-keys is secure: the pre-key is unavailable
+       to eavesdroppers and for any authenticated connection, the pre-
+       key is unique.
+
+
+
+
+
+Cheng, et al.                Standards Track                    [Page 3]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   3.  The negotiation is reliable: no attacker can modify the
+       negotiation communication without being detected by the entities
+       to the communication.
+
+   This document describes the specifications of the PLS protocol,
+   including elementary concepts, functions to be implemented and
+   interfaces for users to utilize PLS protocol.
+
+1.1.  Motivation and Scope
+
+   The PLS protocol has been developed as part of a course in Network
+   Security at the Johns Hopkins University in order for us, as a class,
+   to be able to understand current real-world measures and their
+   weaknesses.
+
+   This document focuses on the requirements and specifications of the
+   Playground Layer Security protocol.  Similar to the Transport Layer
+   Security protocol [ RFC 5246], PLS provides provides authentication,
+   confidentiality, and data integrity.  PLS utilizes the Players Enjoy
+   Eavesdropping Protocol, but can also utilize any protocol that
+   provides reliable data transmissions, including the Transmission
+   Control Protocol (TCP).
+
+   PLS utilizes provably secure cryptographic methods such as AES-CTR
+   symmetric key encryption, cryptographic hashes, and hash-based
+   message authentication codes (HMAC).
+
+   For use in the real world, PLS would lie in the session layer in the
+   OSI model (figure 1) and utilize a reliable transport mechanism to
+   guarantee authentication, confidentiality, and data integrity.
+
+                   +---------------------+
+                   |     Application     |
+                   +---------------------+
+                   |         PLS         |
+                   +---------------------+
+                   |       Reliable      |
+                   |       Transport     |
+                   +---------------------+
+                   |         IP          |
+                   +---------------------+
+                   |      Data Link      |
+                   +---------------------+
+                   |       Physical      |
+                   +---------------------+
+
+                          Figure 1
+
+1.2.  About this Document
+
+   This document presents a specification of the PLS implementation and
+   the basic concepts behind PLS.  Section 2 introduces the
+   philosophical basis of the PLS design.  Section 3 describes in detail
+   the format of the packets used in PLS and how we achieve and
+   guarantee authentication, confidentiality, and data integrity in the
+   presence of malice.
+
+1.3.  Interfaces and Operations
+
+   PLS lies in the middle of the application layer and the transport
+   layer and provides a secure and reliable packet transmission
+   mechanism for protocols at the application level.  When an
+   application wants to establish a private connection with another
+   host, PLS will first verify identities, establish a secure session,
+   then encrypt and transmit any data between the two hosts.
+
+
+
+Cheng, et al.                Standards Track                    [Page 4]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   To provide a secure network connection, this protocol includes
+   mechanisms to ensure authentication, confidentiality, and data
+   integrity.
+
+   Authentication
+
+   Using a trusted third party, hosts can verify the identities of the
+   host it is communicating with through digitally signed certificates.
+   Hosts will be able to trust that correctly signed certificates are
+   proof that the identity to whom you are actually communicating with
+   is the identity he claims to be.  We will discuss certificates in
+   more detail later.
+
+   Confidentiality
+
+   Data transmitted between two hosts are encrypted using the Advanced
+   Encryption Standard (AES).  This encryption mechanism has been proved
+   to provide confidentiality and privacy, preventing an attacker from
+   gathering any meaning from intercepted data.
+
+   Integrity
+
+   Data transmitted is verified using a message authentication code
+   (MAC).  We will use a hash-based message authentication code (HMAC)
+   that is provably secure for data integrity.  HMACs are generated by
+   hashing a chunk of data and then using a key to encrypt it.
+
+   These keys are only found on the two communicating hosts and are
+   never transmitted over the network.  If any data is found to be
+   altered, the MAC will alert the host that the data has been indeed
+   tampered with.
+
+   Firstly, the PLS hosts will send hello messages to each other which
+   contains a nonce and a certificate for authentication.  Then, two
+   entities will exchange the pre-key to generate other cryptographic
+   keys for data encryption.
+
+   To provide a reliable handshake process, the protocol guarantees
+   three basic properties:
+
+      The identities of the peer can be verified using the certificates,
+      asymmetric or public key, cryptography.
+
+      The negotiation of pre-keys is secure: the pre-key is unavailable
+      to eavesdroppers and for any authenticated connection, the pre-key
+      is unique.
+
+
+
+
+
+Cheng, et al.                Standards Track                    [Page 5]
+
+RFC 1                            PRFC's                    November 2017
+
+
+      The negotiation is reliable: no attacker can modify the
+      negotiation communication without being detected by the entities
+      to the communication.
+
+   To provide a secure data transmission, the protocol ensures two
+   properties:
+
+      The connection is private: All the data will be encrypted using
+      symmetric cryptography such as AES.  Each connection generates the
+      keys for symmetric encryption uniquely, based on the pre-key
+      exchanged in handshake process.  So, the attacker could not get
+      the data from encrypted packets.
+
+      The connection is reliable: The MAC key is used for checking
+      integrity of the message. we use the Security hash functions to
+      compute the verification code.  Any accidental corrupted packets
+      or deliberately tampered packets will be discarded since the
+      verification code does not match.  It could prevent Man-in-the-
+      Middle attack effectively.
+
+
+2.  Philosophy
+
+2.1.  Elements of the Network
+
+   The Playground network environment allows hosts to establish
+   connection to a switch through a VNIC.  The switch is connected to
+   other switches and other VNICs to simulate a real world network.
+   Each VNIC can be created with an arbitrary playground address, which
+   similar to an IPv4 address, has four parts, but each part can be an
+   arbitrarily large number.  Once this network is set up, hosts can
+   communicate with other hosts through their VNIC addresses.
+
+   At the moment, Playground operates similarly to a UDP transmission: a
+   sender can send any kind of data to any host at any port.  Playground
+   itself provides to guarantees for data transfer and reliability.  We
+   have previously designed a protocol, Players Enjoy Eavesdropping
+   Protocol (PEEP), to guarantee reliability and data delivery.  PEEP
+   provides no security whatsoever; this is why we need PLS.
+
+   We define a packet as a standard used between a sender and a receiver
+   to perform all the PLS operations.  A packet will contain metadata
+   and any data that one host wants to send to another host.
+
+2.2.  Relation to other Protocols
+
+           +---------+ +-----+  +-------+          +-------+
+           |Games    | | FTP |  |  HTTP |   ...    |       |      Application Level
+           +---------+ +-----+  +-------+          +-------+
+                |         |          |                 |
+            +----------------------------------------------+
+            |                      PLS                     |      Secure Level
+            +----------------------------------------------+
+                                     |                 
+            +----------------------------------------------+
+            |                      TCP/PEEP                |      Transport Level
+            +----------------------------------------------+
+                    |                |               |                       
+                +-------+    +-------------+     +------+
+                |  TCP  |    |  IP & ICMP  | ... |  LNP |         Playground Level
+                +-------+    +-------------+     +------+
+ 
+                  Protocol Relationships
+
+   The structure above shows the relation of PLS to other protocols.
+   PLS will encrypt the data from application level and transfer the
+
+
+
+Cheng, et al.                Standards Track                    [Page 6]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   encrypted data to the lower layer.
+
+   Since the lower layer provides guarantees ordered data delivery, PLS
+   can be sure that data sent to the lower will be delivered to the
+   other host.  PLS can also be sure that any data received is correct
+   and in order, which will then be decrypted and passed up to the
+   application layer
+
+2.3.  Secure Communications
+
+   When transmitting application layer data, PLS will use symmetric
+   encryption to encrypt application layer data and utilize an HMAC to
+   verify data integrity.
+
+2.3.1.  Symmetric Encryption
+
+   Because we are using symmetric encryption, specifically AES-CTR,
+   there is no key exchange process.  Both communicating hosts will be
+   using the same key to encrypt and decrypt data, meaning the
+   encryption key of the client is the decryption key of the server and
+   vice versa.
+
+   Keys will be generated in manner ensuring that both hosts can
+   generate the same set of keys.
+
+   When an application wishes to send data using PLS, the plaintext will
+   be passed down to PLS.  PLS will then encrypt the plaintext with the
+   right key to produce a ciphertext and send the ciphertext to the
+   other host.  The receiving host will then extract the ciphertext, use
+   the same key that encrypted the ciphertext to decrypt and produce the
+   original plaintext.  The plaintext will then be passed up to the
+   application on the receiving host.
+
+   In the PLS, all data is encrypted using AES-128 in CTR mode and the
+   data sent must be encrypted with appropriate encryption key.  In the
+   AES CTR mode, the cipher text = [Encrypt(IV+i) XOR plain text].  The
+   plain text = [Encrypt(IV+i) XOR cipher text
+
+   For the client side, the encryption engine is configured with key EKc
+   and IVc as the initial counter value and the decryption engine is
+   configured with EKs as the key and IVs as the initial counter value.
+   For the server side, the encryption engine is configured with key EKs
+   and IVs as the initial counter value and the decryption engine is
+   configured with EKc as the key and IVc as the initial counter value.
+
+   The EKc, EKs, IVc and IVs are generated by the formula
+   block_0=hash(PLS1.0"+Nc+Ns+PKc+PKs),block_1=hash(block_0),
+   block_2=hash(block_1), block_3=hash(block_2),block_4=hash(block_3),
+
+
+
+Cheng, et al.                Standards Track                    [Page 7]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   block_5=hash(block_4).  The five blocks is 800 bits in total, and the
+   EKc is the first 128 bits, the Eks is the second 128 bits.  And the
+   IVc is the third 128 bits, the IVs is the fourth 128 bits.
+
+   To send data, the plain text P is encrypted by the encryption engine
+   to produce cipher text C.
+
+2.3.2.  HMAC
+
+   The PLS layer uses a keyed Message Authentication Code (MAC) to
+   protect message integrity.  The cipher suites defined in this
+   document use a construction known as HMAC, which is based on a hash
+   function.  Specifically, PLS will use SHA1 as the hash function in
+   producing the HMAC.
+
+   When sending data, the sending host who has produced a ciphertext
+   will create an HMAC from and send it along with the ciphertext.  The
+   receiving host will then extract both the ciphertext and the sent
+   HMAC.  The receiving host will then verify that the HMAC is correct,
+   proving that the ciphertext has not been altered.
+
+   For the client, the MAC engine is configured with key MKc and the
+   verification engine is configured with key MKs.  For the server, the
+   MAC engine is configured with key MKs and the verification engine is
+   configured with key MKc.  MKc is the fifth 128 bits of the 5
+   generated blocks.  MKs is the sixth 128 bits of the generated blocks.
+
+   To send data, the cipher text C is passed to MAC engine to produce
+   verification code V. And data is send to another side as the format
+   message(C,V).  When data is received, the C is extracted and use the
+   verification engine of the received side to produce V(prime).  If the
+   V(prime) is equal to V in the message, then the message could be
+   used.  If V(prime) is not equal to V, then the message is discarded
+   and the received side will display False.
+
+2.4.  Authenticated Communications
+
+   To provide authentication amongst two parties who wish to
+   communicate, we rely on certificates.
+
+2.4.1.  Certificates
+
+   Certificates are generated before any communications occur and are
+   used as a mechanism to prove that the identity of the host is indeed
+   the identity of the person you are intending to communicate with.
+
+   Certificates in PLS are signed by a trusted third party.  What this
+   means is that the two hosts who wish to communicate rely on this
+
+
+
+Cheng, et al.                Standards Track                    [Page 8]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   trusted third party to ensure that there does not exist any
+   fraudulent certificates who can claim an identity that they do not
+   own.
+
+   An example:
+
+   Two hosts with addresses 20174.1.1.1 and 20174.1.2.2 wish to
+   communicate with each other.  These two hosts both own certificates
+   that are signed and verified by a trusted third party.  This
+   signature can either be direct or indirect, namely the trusted third
+   party can directly sign the certificate or transfer authority to
+   another party to sign the certificate.  When the two hosts begin
+   communication, they will exchange certificates and effectively
+   proving to each other that they are who they say they are.
+
+   If the certificates transmitted are corrupt or identified to be fake
+   in any way, then a host will cease all communications with the other
+   host.
+
+   At this point, it is up to the trusted third party to ensure that he
+   is not signing any duplicate certificates, otherwise there will be
+   two separate entities with the same identity, posing an obvious
+   security risk.
+
+
+3.  Functional Specifications
+
+3.1.  PLS Packet Header Format
+
+   PLS packets are packets transferred between PLS layer, including
+   session establishment, data packets, and close packets.  We detail
+   the specifications of PLS packets and the purpose of each packet
+   field here.
+
+3.1.1.  PlsHello
+
+   Nonce (8 bytes): 64 random bits of data used to prove freshness of a
+   session.
+
+   Certs (List(Buffer)): a list of certificates required to verify the
+   host.  This will normally have 3 certificates.  The certificate of
+   the host, an intermediate CA certificate, and the root CA
+   certificate.  The list of certificates in this field must follow a
+   hierarchy with the first certificate being the certificate of the
+   host and the last certificate being the certificate of root CA.
+   These certificates will be used to authenticate a host and assist in
+   symmetric key establishment.
+
+
+
+
+Cheng, et al.                Standards Track                    [Page 9]
+
+RFC 1                            PRFC's                    November 2017
+
+
+3.1.2.  PlsKeyExchange
+
+   PreKey (Buffer): generated data used in the symmetric key
+   establishment.  This field will be encrypted with the public key of
+   the host you are communicating with.  The public key can be obtained
+   from the certificate of the host in the first PlsHello message
+   received and the encryption mechanism used is RSA-2048 with OAEP-SHA1
+   padding.
+
+   NoncePlusOne (UINT64): The received nonce plus one.
+
+3.1.3.  PlsHandshakeDone
+
+   ValidationHash (BUFFER): A digested SHA1 hash of the previous
+   exchanged messages.  This will include two PlsHello packets and two
+   PlsKeyExchange packets, with each host sending one PlsHello and one
+   PlsKeyExchange packet.  This validation hash is used to ensure that
+   both communicating hosts have received the same information and both
+   hosts can generate the same set of keys.
+
+3.1.4.  PlsData
+
+   CipherText (BUFFER): Data passed down from the application and
+   encrypted with the right keys.  When receiving a PlsData packet, the
+   CipherText will be decrypted with the hosts decryption key and be
+   passed up to the receiving application layer.
+
+   Mac (BUFFER): the Mac is an HMAC and serves as a verification for the
+   CipherText.  The Mac is generated from the CipherText and the
+   receiving host will verify the Mac with the CipherText before
+   decrypting.
+
+3.1.5.  PlsClose
+
+   Error (String Optional): if an error is detected, this Error field
+   will contain a string describing the error.  Presence of a PlsClose
+   packet indicates abnormal termination.
+
+3.2.  State Machine
+
+   We have 5 states on each side: Init (1), Hello (2), KeyExch (3),
+   HSDone (4), Secure (5) Client side state machine:
+
+3.2.1.  Initial
+
+   a.  Start: Client Init state indicates that nothing has been sent
+   yet, and client will be soon sending message m1 (Client Hello packet,
+   the terminology of m1 to m6 will be discussed in details in
+
+
+
+Cheng, et al.                Standards Track                   [Page 10]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   establishing connection section)
+
+   b.End: Client changes to Hello state after sending m1
+
+3.2.2.  Hello
+
+   a.Start: Client sent m1 and waiting for m2 from server (Server Hello
+   packet)
+
+   b.End: Client changes to KeyExch after receiving m2 packet from
+   server
+
+3.2.3.  Key Exchange
+
+   a.Start: Client received m2 sends m3 (Client PlsKeyExchange packet)
+
+   b.End: Client changes to HSDone after receiving m4 packet from server
+
+   Or
+
+   c.Start: Client receives m2 and m4 and will send m3
+
+   d.End: Client changes to HSDone after sending out m3
+
+   There are two possibilities here because server sends m4 back to
+   client as soon as it receives hello message of the client.  Since
+   sending m4 by the server does not depend on m3 of the client, client
+   will either receive m4 before sending m3 or receive m4 after sending
+   m3.
+
+3.2.4.  Handshake Done
+
+   a.Start: Client received m4 and sent out m5 (Client PlsHandshakeDone
+   packet)
+
+   b.End: Client received m6 from server (Server PlsHandshakeDone
+   packet)
+
+   Or
+
+   c.Start: Client receives m6 will send m5
+
+   d.End: Client sent out m5 to server
+
+   Again, two possibilities exist here because client might receive m6
+   before sending out m5, or send out m5 before receiving m6.  Since m3
+   and m4 does not depend on each other, the order of receiving m5 and
+   sending out m6 is not determined.
+
+
+
+Cheng, et al.                Standards Track                   [Page 11]
+
+RFC 1                            PRFC's                    November 2017
+
+
+3.2.5.  Secure
+
+   a.Start: Server finishes sending m6 and receiving m5
+
+   b.End: close() is called
+
+3.2.6.  Close
+
+   a.The PLS connection is closed if close() is called.  (Usually this
+   is called when certificate cannot be verified or the MAC of the
+   PlsData packet is not verified, or it received PlsClose packet from
+   the other side)
+
+   Diagram of possible a state machine change scenario:
+
+
+    0                            0
+    Client ----------m1---------> Server
+    1                              1
+    Client <---------m2---------  Server
+    Client <---------m4---------  Server
+    2                              2
+    Client ----------m3---------> Server
+    Client ----------m5---------> Server
+    3                              3
+    Client <---------m6---------  Server
+    4                              4
+          ... (Data transmission)...
+    Client ----------m7---------> Server
+    (Closed)
+                                  (Closed)
+
+3.3.  Establishing Connection
+
+   The connection establishment follows the handshake protocol, where 6
+   messages: m1, m2, m3, m4, m5, m6 will be exchanged.
+
+   M1 is the client PlsHello packet sent to server.
+
+   M2 is the cerver PlsHello packet sent back to client.  M2 depends on
+   the receiving of m1.
+
+   M3 is the client PlsKeyExchange packet sent to server.  M3 depends on
+   the receiving of m2.
+
+   M4 is the server PlsKeyExchange packet sent back to client.  M4
+   depends on the receiving of M1, but not necessarily on the receiving
+   of m3.
+
+   M5 is the client PlsHandShakeDone packet sent to server.  M5 depends
+   on the receiving of m4.
+
+   M6 is the server PlsHandShakeDone packet sent back to client.  M6
+   depends on the receiving of m3.
+
+   (m1 exchange) In the handshake protocol, the client first sends the
+   Server a m1. nonce_c (Client Nonce) is a 64 bit random number.
+   Client_certs is a list of certificates.  The first certificate must
+   be certificate of server, followed by any other certificates required
+   for authentication. (m2 exchange) Then the server sends back a m2,
+   where nonce_s (Server Nonce) is a 64-bit random number.  Server_certs
+   is a list of certificates.  The first certificate must be certificate
+   of server, followed by any other certificates required for
+   authentication. (m3 exchange) Upon reception of m2, the Client sends
+   the Server a key exchange message.  The 128 bits-Client_pre_key is
+
+
+
+Cheng, et al.                Standards Track                   [Page 12]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   data that will be used by the client and the server to generate keys.
+   nonce_s+1 is the nonce which server sent in m2 plus one.
+   Client_pre_key is encrypted under the public key contained in
+   certificate of server (the first certificate in Server_Certs). (m4
+   exchange) The server sends back m4, the key exchange message, right
+   after it sends back m2 to client.  The 128 bits-Server_pre_key is the
+   data that will be used by the client and server to generate keys.
+   nonce_c+1 is the Nonce sent in m1 plus one.  Server_pre_key is
+   encrypted under the public key contained in certificate of C (the
+   first certificate in Client_Certs).  Note that this message does not
+   depend on the reception of m3, so m3 and m4 can be sent
+   simultaneously. (m5 exchange) Upon receiving the key exchange message
+   from the server, the client sends the server a handshake finished
+   message.  It contains the hash of the previous four messages m1
+   through m4. (m6 exchange) Similarly, as soon as m3 is received, the
+   server sends the client a handshake finished message.  It also
+   contains the hash of the previous four messages m1 through m4.
+   Specifically, it does not contain m5 in the hash, so this message can
+   be sent immediately after receiving m3 from the client.
+
+   When the client and the server finish their exchange of m1 to m6,
+   they can send PlsData packets over each other securely.
+
+   Diagram:
+
+   (M1 exchange) Client---- PlsHello(Nonce_c, [Client_Certs])---->Server
+   (M2 exchange) Server----PlsHello(Nonce_s, [Server_Certs])--->Client
+   (M3 exchange) Client---PlsKeyExchange({Client_pre_key}Server_public_key, Nonce_s+1)---->Server
+   (M4 exchange) Server---PlsKeyExchange({Server_pre_key}Client_public_key, Nonce_c+1)---->Client
+   (M5 exchange) Client----PlsHandshakeDone(SHA1(m1, m2, m3, m4) )--->Server
+   (M6 exchange) Server---PlsHandshakeDone(SHA1(m1, m2, m3, m4))--->Client
+
+   Secure data transmission ...
+
+
+   Four possible scenarios (Since m3, m4 can be sent simultaneously, and
+   m5, m6 can be sent simultaneously)
+
+   Scenario 1:
+
+   (M1 exchange) Client-----PlsHello(Nonce_c,[Client_Certs])---->Server
+
+   (M2 exchange) Client<----PlsHello(Nonce_s, [Server_Certs])-----Server
+
+   (M4 exchange) Client<---PlsKeyExchange({Server_pre_key}Client_public_key, Nonce_c+1)----Server
+
+   (M3 exchange) Client----PlsKeyExchange({Client_pre_key}Server_public_key, Nonce_s+1)---->Server
+
+   (M5 exchange) Client----PlsHandshakeDone(SHA1(m1, m2, m3, m4))--->Server
+
+   (M6 exchange) Client<---PlsHandshakeDone(SHA1(m1, m2, m3, m4))----Server
+
+   ...  (Secure Data Transmission) ...
+
+
+
+Cheng, et al.                Standards Track                   [Page 13]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   Scenario 2:
+
+   (M1 exchange) Client-----PlsHello(Nonce_c,[Client_Certs])---->Server
+
+   (M2 exchange) Client<----PlsHello(Nonce_s, [Server_Certs])---Server
+
+   (M3 exchange) Client-----PlsKeyExchange({Client_pre_key}Server_public_key, Nonce_s+1)---->Server
+
+   (M4 exchange) Client<---PlsKeyExchange({Server_pre_key}Client_public_key, Nonce_c+1)----Server
+
+   (M5 exchange) Client----PlsHandshakeDone(SHA1(m1, m2, m3, m4))--->Server
+
+   (M6 exchange) Client<---PlsHandshakeDone(SHA1(m1, m2, m3, m4))----Server
+
+   ...  (Secure Data Transmission) ...
+
+   Scenario 3:
+
+   (M1 exchange) Client-----PlsHello(Nonce_c,[Client_Certs])---->Server
+
+   (M2 exchange) Client<----PlsHello(Nonce_s, [Server_Certs])---Server
+
+   (M3 exchange) Client-----PlsKeyExchange({Client_pre_key}Server_public_key, Nonce_s+1)---->Server
+
+   (M4 exchange) Client<----PlsKeyExchange({Server_pre_key}Client_public_key, Nonce_c+1)----Server
+
+   (M6 exchange) Client<---PlsHandshakeDone(SHA1(m1, m2, m3, m4))----Server
+
+   (M5 exchange) Client----PlsHandshakeDone(SHA1(m1, m2, m3, m4))--->Server
+
+   ...  (Secure Data Transmission) ...
+
+   Scenario 4:
+
+
+
+
+Cheng, et al.                Standards Track                   [Page 14]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   (M1 exchange) Client----PlsHello(Nonce_c,[Client_Certs])---->Server
+
+   (M2 exchange) Client<----PlsHello(Nonce_s, [Server_Certs])----Server
+
+   (M4 exchange) Client<---PlsKeyExchange({Server_pre_key}Client_public_key, Nonce_c+1)----Server
+
+   (M3 exchange) Client----PlsKeyExchange({Client_pre_key}Server_public_key, Nonce_s+1)---->Server
+
+   (M6 exchange) Client<---PlsHandshakeDone(SHA1(m1, m2, m3, m4))----Server
+
+   (M5 exchange) Client----PlsHandshakeDone(SHA1(m1, m2, m3, m4))--->Server
+
+   ...  (Secure Data Transmission) ...
+
+3.4.  Closing Connection
+
+   If either client or server detects an error, it will send a PlsClose
+   packet with an error message.  The text of the error message is
+   optional, but the presence of an error message indicates that it was
+   not a normal termination.
+
+   Possible errors:
+
+   In verifying the certificate chain when receiving a PlsHello packet:
+   ip_subset is not valid, or issuer is not verified, or public_key
+   contained in any certificate is invalid.
+
+   In validating the hash received in the HandShakeDone packet,
+   validation does not match with the own hash.
+
+   In decrypting the preKey using the own private key when a
+   PlsKeyExchange Packet is received, if there is an error occurring
+   during the process, pls_close() will be called.
+
+   In verifying the MAC of the packet when a PlsData Packet is received,
+   if there is an error occurring during the process, pls_close() will
+   be called.
+
+   If connection is lost during any process (handshake/ data
+   transmission), the PLS transport will be closed but no PlsClose
+   packet is sent to the other side.
+
+
+
+Cheng, et al.                Standards Track                   [Page 15]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   If no error occurred and the connection is not lost during the
+   process, the connection can still get closed when it wants to close
+   the connection, by sending a PlsClose packet to the other side and
+   close the PLS transport.  Or it will close its PLS transportation
+   when a PlsClose packet is received from the other side.
+
+3.5.  Data Transmission
+
+   Since the lower PEEP layer ensures that data packets arrive in order
+   reliably, PLS layer just makes sure each data packet is verified
+   before passing it up, and makes sure each data packet is encrypted
+   before sending out.
+
+   Passing up: Whenever a data packet is received, its mac is verified
+   before it is passed to the higher protocol layer.  If it fails to be
+   verified, pls_close() is called and the connection gets terminated.
+
+   Sending out: Data is first encrypted by the AES-CTR mode encryptor,
+   and mac is created by passing in the ciphertext we just got into the
+   SHA1 hashing algorithm (discussed later in Symmetric Key Encryption
+   section).
+
+3.6.  Certificates
+
+3.6.1.  Certificate Generation
+
+   Certificates will be used for authentication and assisting in key
+   establishment.  Certificates in PLS are generated in the X509 format
+   and are required to be generated before any communication between 2
+   hosts begin.
+
+   Each host must generate a certificate with a valid playground
+   address.  Playground addresses have the format a.b.c.d where a, b, c,
+   d can be any number between 0 and 65535.  Certificates are considered
+   valid if there exists a valid chain from the certificate of the host
+   to a root certificate authority certificate.
+
+   At the moment, there only exists one root certificate authority that
+   is Seth Nielson.  Therefore, all certificates must be directly or
+   indirectly signed by the certificate of Seth Nielson to be considered
+   valid.
+
+3.6.2.  Certificate verification
+
+   Certificate chain validation works by recursively validating 2
+   certificates until the last certificate in the chain.  We must also
+   verify that the last certificate is indeed a root CA certificate.  At
+   the time of writing, the only root CA certificate is the certificate
+
+
+
+Cheng, et al.                Standards Track                   [Page 16]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   of Seth Nielson.
+
+   For example:
+
+   Suppose there exists a certificate chain [A, B, C] that wishes to be
+   validated.  A, B, C represent certificates where B has signed A and C
+   has signed B. To verify that B has indeed signed A, we extract the
+   public key of B, signature of A, and the bytes of A excluding the
+   signature.  We then hash the bytes of A excluding the signature using
+   SHA256 and decrypt signature of A using public key of B. If these two
+   values match, then B did indeed sign A.
+
+   We proceed to perform this certificate verification on B and C,
+   verifying that C did indeed sign B. Once this has been verified, we
+   must also ensure that C is a root CA certificate.
+
+   If the chain has more than 3 certificates [C1, C2, ..., Cn] then
+   certificate chain verification works by verifying certificate Ci with
+   Ci+1 for values of i from 0 to n.  Verifying Cn works by checking if
+   Cn is a valid root CA certificate.
+
+3.7.   Symmetric Key Encryption
+
+3.7.1.  Key Establishment
+
+   Key establishment occurs once a host has received the
+   PlsHandshakeDone packet and verified the ValidationHash, but before
+   the PLS layer notifies the above application layer that it is ready
+   to receive data.
+
+   Because we are using symmetric key encryption, specifically AES-CTR,
+   the client and the server must generate the same set of keys to
+   properly encrypt and decrypt data of each other.  In PLS, the key
+   generation process combines the literal string=PLS1.0 and
+   concatenates four items to it: the nonce Nc sent in the client
+   PlsHello packet, the nonce Ns sent in the server PlsHello packet, PKc
+   sent in the client PlsKeyExchange packet, and PKs sent in the server
+   PlsKeyExchange packet.  The values Nc, Ns, PKc, and PKs are in
+   represented in raw bytes in a big-endian architecture and are to be
+   appended in that order.  The values PKc and PKs must also be
+   decrypted before appending it to the string
+
+   Once the four values have been appended to the string=PLS1.0, we use
+   this string as a seed and continually hash this string to produce the
+   bits that will become our keys and initialization vectors.  The hash
+   algorithm PLS uses is SHA1 and the keys are produced as so:
+
+   SEED =PLS1.0 + Nc + Ns + PKc + PKs
+
+
+
+Cheng, et al.                Standards Track                   [Page 17]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   block_0 = SHA1(SEED)
+
+   block_1 = SHA1(block_0)
+
+   block_2 = SHA1(block_1)
+
+   block_3 = SHA1(block_2)
+
+   block_4 = SHA1(block_3)
+
+   Each block produced is 160 bits long totaling 800 bits produced.  We
+   set our keys and initialization vectors as so:
+
+   EKc = total_bits[0:128]
+
+   EKs = total_bits[128:256]
+
+   MKc = total_bits[256:384]
+
+   MKs = total_bits[384:512]
+
+   IVc = total_bits[512:640]
+
+   IVs = total_bits[640:768]
+
+   where EKc is the client encrypting key and the decrypting key of the
+   server, EKs is the encryption key of the server and the decrypting
+   key of the client, MKc is the client MAC generation key and the
+   server MAC verification key, MKs is the server MAC generation key and
+   the client MAC verification key, IVc is the client initialization
+   vector, and IVs is the server initialization vector.
+
+   Because each host has the same value for Nc, Ns, PKc, and PKs, we can
+   be sure that both hosts have correct keys for encryption and
+   decryption.  Both hosts verify that they have received valid
+   information by through the ValidationHash in the PlsHandshakeDone
+   packet.
+
+3.7.2.  Encryption
+
+   Encryption in PLS uses AES-CTR mode.  This mode is chosen because it
+   is very parallelizable and provides sufficient confidentiality.
+
+   The client performs encryption using EKc as the key and IVc as the
+   initialization vector.
+
+   The server performs encryption using EKs as the key and IVs as the
+   initialization vector.
+
+
+
+Cheng, et al.                Standards Track                   [Page 18]
+
+RFC 1                            PRFC's                    November 2017
+
+
+3.7.3.  Decryption
+
+   Decryption in PLS uses AES-CTR mode.
+
+   The client performs decryption using EKs as the key and IVs as the
+   initialization vector.
+
+   The server performs decryption using EKc as the key and IVc as the
+   initialization vector.
+
+   The keys used to decrypt must be the same as the keys used to encrypt
+   since we are using a symmetric key algorithm.  That is why the
+   decryption key used by the server is the same as the encryption key
+   used by the client.  In addition, because each host has the keys for
+   both communicating hosts, proper encryption and decryption can be
+   performed correctly so that the two hosts can communicate with
+   confidentiality guaranteed.
+
+3.7.4.  Message Authentication Codes (MAC)
+
+   Message authentication codes ensure that the encrypted data in a
+   PlsData packet has not been altered in any way.
+
+   Message authentication codes in PLS use the SHA1 hashing algorithm.
+   The bytes used as keys will be MKc and MKs as generated previously.
+
+   Message authentication codes in a PLSData packet are generated by
+   using the HMAC algorithm for producing a hash-based message
+   authentication code.  The client will encrypt the ciphertext under
+   MKc and the server will encrypt under MKs.
+
+   Message authentication codes in PLS are verified by using the HMAC
+   algorithm for verifying a hash-based message authentication code.
+   The client will decrypt using MKs and the server will decrypt using
+   MKc.
+
+   Since both the client and the server have generated the same set of
+   keys, namely MKc and MKs, they have the ability decrypt and verify
+   the MAC.
+
+3.8.  Interfaces
+
+   There are two types of interfaces of concern.  The application-PLS
+   interface and the PLS-reliable transport interface.  We will discuss
+   both interfaces here.
+
+   Application-PLS Interface
+
+
+
+
+Cheng, et al.                Standards Track                   [Page 19]
+
+RFC 1                            PRFC's                    November 2017
+
+
+      Open: The application level connection will only be opened once
+      PLS has finished the handshake.  This means that PLS has
+      established a symmetric key with the communicating host and is
+      ready to receive data from the application to encrypt and send to
+      the communicating host.  The PLS layer at the receiving host is
+      also ready to receive data from the sending host for decryption to
+      pass up to the application layer.
+
+      Write: Whenever the application-level protocol wants to send data
+      to another host, it will write data to the PLS and the data will
+      be encrypted.
+
+      Receive: When PLS receives data, it will check data integrity by
+      verifying the MAC.  Any packets that fail MAC verification will
+      result in a packet drop.  If the MAC verification succeeds, the
+      received data will be decrypted and passed up to the application.
+
+      Close: If the application has finished sending or wishes to
+      disconnect, the PLS layer will stop sending data to the
+      communicating host.
+
+   PLS-Reliable Transport Interface
+
+      Open: Once a reliable transport has been established and has
+      notified the PLS protocol of such establishment, then the PLS
+      layer is ready to perform the PLS handshake and establish a
+      symmetric key for secure communication.
+
+      Write: Once the PLS layer has completed encryption of application
+      data, it will pass the encrypted data to the reliable transport
+      layer to be delivered to the communicating host.
+
+      Receive: When the reliable transport receives data, it will ensure
+      that the received data has been properly ordered.  Once the
+      reliable transport layer has organized received data in the
+      correct order, it will pass up the data to the PLS layer.
+
+      Close: Whenever the higher protocol closes the connection, the
+      reliable transport layer will handle the closing request
+      gracefully, waiting to resend data if necessary.
+
+3.9.  Event Processing
+
+   The PLS is aimed to encrypt the data in the application level and
+   then transfer the encrypted data to the lower level.  And PLS also
+   decrypt data from the lower level and transfer the decrypted data to
+   the higher level.
+
+
+
+
+Cheng, et al.                Standards Track                   [Page 20]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   To encrypt and decrypt data, either side of the PLS level will have
+   the handshake process first and then it can begin sending data
+   process.
+
+   In the handshake process, the client and server side will first
+   exchange the Nc(Client Nonce), C_Certs(Client Certs), Ns(Server
+   Nonce) and S_Certs(Server Certs) in the hello message first.  And
+   then they will exchange the Pkc(Client Pre-Key) an Pks(Server Pre-
+   Key) which are used to generate keys: Ekc, EKs, MKc, MKs.  EKc is the
+   client encryption key, EKs is the server encryption key which is the
+   client decryption key, MKc is client MAC key and MKs is the server
+   MAC key which is the client verification key.
+
+   The final step in the handshake process is to exchange the handshake
+   finished message which contains the hash of the previous four
+   messages M1 through M4.  And client and server side will use the M1
+   to M4 to generate their own EKc, EKs, IVc, IVs, MKc and MKs
+   separately.  The process is shown below.
+
+   1.  M1, C->S: PlsHello(Nc,[C_Certs])
+
+   2.  M2, S->C: PlsHello(Ns,[S_Certs])
+
+   3.  M3, C->S: PlsKeyExchange({PKc}S_public, Ns+1)
+
+   4.  M4, S->C: PlsKeyExchange({PKs}C_public, Nc+1)
+
+   5.  M5, C->S: PlsHandshakeDone(Sha1(M1,M2,M3,M4))
+
+   6.  M6, S->C: PlsHandshakeDone(Sha1(M1,M2,M3,M4))
+
+   The next process is data transfer process.  For client side, EKc and
+   IVc used for encrypting data, the EKs and IVs for decrypting data,
+   the MAC engine is configured with key MKc and the verification is
+   configured with key MKs.  For server side, EKs and IVs used for
+   encrypting data, EKc and IVc used for for decrypting data, the MAC
+   engine is configured with key MKs and the verification is configured
+   with key MKc.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Cheng, et al.                Standards Track                   [Page 21]
+
+RFC 1                            PRFC's                    November 2017
+
+
+Authors' Addresses
+
+   Steven Ning Cheng (editor)
+   JHU Network Security Fall 2017
+   John Hopkins University Graduate Lab
+   Baltimore, MD  21218
+   USA
+
+   Phone: +1 714-261-6147
+   Email: stevencheng@jhu.edu
+
+
+   Jibraan Singh Chahal (editor)
+   JHU Network Security Fall 2017
+   John Hopkins University Graduate Lab
+   Baltimore, MD  21218
+   USA
+
+   Phone: +1 443-525-2469
+   Email: jchahal1@jhu.edu
+
+
+   Mengdi Yang (editor)
+   JHU Network Security Fall 2017
+   John Hopkins University Graduate Lab
+   Baltimore, MD  21218
+   USA
+
+   Phone: +1 410-218-1481
+   Email: myang51@jhu.edu
+
+
+   Suyi Liu (editor)
+   JHU Network Security Fall 2017
+   John Hopkins University Graduate Lab
+   Baltimore, MD  21218
+   USA
+
+   Phone: +1 443-799-9993
+   Email: sliu92@jhu.edu
+
+
+
+
+
+
+
+
+
+
+
+Cheng, et al.                Standards Track                   [Page 22]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   Nan Ding (editor)
+   JHU Network Security Fall 2017
+   John Hopkins University Graduate Lab
+   Baltimore, MD  21218
+   USA
+
+   Phone: +1 443-525-5487
+   Email: nding5@jhu.edu
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Cheng, et al.                Standards Track                   [Page 23]
+
+RFC 1                            PRFC's                    November 2017
+
+
+Full Copyright Statement
+
+   Copyright (C) Seth James Nielson (2017).  All Rights Reserved.
+
+   This document and translations of it may be copied and furnished to
+   others, and derivative works that comment on or otherwise explain it
+   or assist in its implementation may be prepared, copied, published
+   and distributed, in whole or in part, without restriction of any
+   kind, provided that the above copyright notice and this paragraph are
+   included on all such copies and derivative works.  However, this
+   document itself may not be modified in any way, such as by removing
+   the copyright notice or references to the PLAYGROUND experiment or
+   other associated organizations, except by explicit permission.
+
+   The limited permissions granted above are perpetual and will not be
+   revoked by SETH JAMES NIELSON or his successors or assigns.
+
+   This document and the information contained herein is provided on an
+   "AS IS" basis and SETH JAMES NIELSON and associated academic
+   institutions DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+   HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+
+Intellectual Property
+
+   The PLAYGROUND framework and student submissions for PLAYGROUND are
+   intended to be free of any intellectual property conflicts.  All
+   submitting parties, especially students, are not allowed to submit
+   source code, specifications, or other components that are known to be
+   protected by copyright, patents, or other IP mechanisms.  Students
+   submitting creative content grant shared rights and ownership of
+   their content to the PLAYGROUND project.  Specifically, any
+   submission can be used in future educational settings including
+   subsequent PLAYGROUND experiments.
+
+   Any interested party is invited to bring to the experiment director's
+   attention any copyrights, patents or patent applications, or other
+   proprietary rights which may cover technology that may be currently
+   in use without permission.
+
+   It should be noted that these statements have not been reviewed by
+   legal counsel.  Moreover, the academic institutions at which
+   PLAYGROUND experiments take place may have additional or even
+   conflicting copyright and intellectual property rules.  Accordingly,
+   concerned parties may need to contact their own lawyer and/or
+   resources at their institution to understand the rights and
+
+
+
+Cheng, et al.                Standards Track                   [Page 24]
+
+RFC 1                            PRFC's                    November 2017
+
+
+   limitations associated with code donated to a PLAYGROUND experiment.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Cheng, et al.                Standards Track                   [Page 25]
+
