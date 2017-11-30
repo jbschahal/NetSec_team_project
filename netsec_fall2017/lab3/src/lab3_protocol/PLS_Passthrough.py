@@ -168,5 +168,5 @@ class PLS_Server(PLS_Base):
         self.higherProtocol().connection_made(PLS_Transport(self.transport, self))
 
 
-clientFactory = StackingProtocolFactory(PEEP_Client, PLS_Client)
-serverFactory = StackingProtocolFactory(PEEP_Server, PLS_Server)
+clientFactory = StackingProtocolFactory(PLS_Client, PEEP_Client)
+serverFactory = StackingProtocolFactory(PLS_Server, PEEP_Server)
