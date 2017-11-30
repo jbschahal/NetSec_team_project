@@ -5,6 +5,7 @@ from . import CertFactory
 # import CertFactory
 import cryptography
 import OpenSSL
+from .lab2_protocol.Peep_Passthrough import PEEP_Client, PEEP_Server
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes, hmac
@@ -167,5 +168,5 @@ class PLS_Server(PLS_Base):
         self.higherProtocol().connection_made(PLS_Transport(self.transport, self))
 
 
-clientFactory = StackingProtocolFactory(PLS_Client)
-serverFactory = StackingProtocolFactory(PLS_Server)
+clientFactory = StackingProtocolFactory(PLS_Client, PEEP_Client)
+serverFactory = StackingProtocolFactory(PLS_Server, PEEP_Server)
