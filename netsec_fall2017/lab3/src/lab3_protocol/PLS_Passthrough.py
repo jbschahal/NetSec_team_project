@@ -2,7 +2,6 @@ import random
 import os
 import hashlib
 from . import CertFactory
-# import CertFactory
 import cryptography
 import OpenSSL
 from .lab2_protocol.Peep_Passthrough import PEEP_Client, PEEP_Server
@@ -39,23 +38,22 @@ class PLS_Client(PLS_Base):
 
     def __init__(self):
         super().__init__()
-        self.my_priv_key = serialization.load_pem_private_key(\
-            CertFactory.getPrivateKeyForAddr("20174.1.11.1"),\
-            password = None,\
-            backend = default_backend())
 
     def connection_made(self, transport):
         super().connection_made(transport)
+        self.address, self.port = transport.get_extra_info("sockname")
+        self.my_priv_key = serialization.load_pem_private_key(\
+            CertFactory.getPrivateKeyForAddr(self.address),\
+            password = None,\
+            backend = default_backend())
         self.start_handshake()
 
     def start_handshake(self):
         cli_hello = PlsHello()
         self.client_nonce = random.getrandbits(64)
         cli_hello.Nonce = self.client_nonce
-        cli_cert = CertFactory.getCertsForAddr("20174.1.11.1")
-        my_cert = CertFactory.getCertsForAddr("20174.1.11")
-        root_cert = CertFactory.getCertsForAddr("20174.1")
-        cli_hello.Certs = [cli_cert, my_cert, root_cert]
+        cli_cert = CertFactory.getCertsForAddr(self.address)
+        cli_hello.Certs = cli_cert
         self.m1 = cli_hello.__serialize__()
         self.send_packet(cli_hello)
         self.state = PLS_Base.HELLO
@@ -107,13 +105,14 @@ class PLS_Server(PLS_Base):
 
     def __init__(self):
         super().__init__()
-        self.my_priv_key = serialization.load_pem_private_key(\
-            CertFactory.getPrivateKeyForAddr("20174.1.11.1"),\
-            password = None,\
-            backend = default_backend())
 
     def connection_made(self, transport):
         super().connection_made(transport)
+        self.address, self.port = transport.get_extra_info("sockname")
+        self.my_priv_key = serialization.load_pem_private_key(\
+            CertFactory.getPrivateKeyForAddr(self.address),\
+            password = None,\
+            backend = default_backend())
 
     def handle_hello(self, packet):
         self.m1 = packet.__serialize__()
@@ -124,10 +123,8 @@ class PLS_Server(PLS_Base):
         hello_packet = PlsHello()
         self.server_nonce = random.getrandbits(64)
         hello_packet.Nonce = self.server_nonce
-        server_cert = CertFactory.getCertsForAddr("20174.1.11.1")
-        my_cert = CertFactory.getCertsForAddr("20174.1.11")
-        root_cert = CertFactory.getCertsForAddr("20174.1")
-        hello_packet.Certs = [server_cert, my_cert, root_cert]
+        server_cert = CertFactory.getCertsForAddr(self.address)
+        hello_packet.Certs = server_cert
         self.m2 = hello_packet.__serialize__()
         self.send_packet(hello_packet)
         self.state == PLS_Base.KEYEXCH

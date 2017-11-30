@@ -32,10 +32,13 @@ def getPrivateKeyForAddr(addr):
     return private_key_user.encode()
 
 def getCertsForAddr(addr):
-    addr = cert_dict[addr]
-    with open(addr) as fp:
-        certs_user = fp.read()
-    return certs_user.encode()
+    addr1 = cert_dict[addr]
+    addr2 = cert_dict["20174.1.11"]
+    with open(addr1) as fp:
+        certs_user1 = fp.read()
+    with open(addr2) as fp:
+        certs_user2 = fp.read()
+    return [certs_user1.encode(), certs_user2.encode()]
 
 def getRootCert(addr):
     addr = cert_dict[addr]
