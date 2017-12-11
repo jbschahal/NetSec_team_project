@@ -68,7 +68,7 @@ class PLS_Base(StackingProtocol):
         self.deserializer = PlsBasePacket.Deserializer()
 
     def data_received(self, data):
-        print("pls data received")
+        # print("pls data received")
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
             if isinstance(packet, PlsBasePacket):
@@ -76,7 +76,7 @@ class PLS_Base(StackingProtocol):
 
     def handle_packets(self, packet):
         if isinstance(packet, PlsHello):
-            print("got pls hello")
+            # print("got pls hello")
             self.handle_hello(packet)
         elif isinstance(packet, PlsKeyExchange):
             self.handle_keyexch(packet)
@@ -91,7 +91,7 @@ class PLS_Base(StackingProtocol):
 
     def handle_hsdone(self, packet):
         if self.validation_hash != packet.ValidationHash:
-            print("error: validation hash doesn't match")
+            # print("error: validation hash doesn't match")
             self.pls_close()
         else:
             block_0 = hashlib.sha1(b"PLS1.0" + self.client_nonce.to_bytes(8, 'big') + self.server_nonce.to_bytes(8, 'big') + self.pkc + self.pks).digest()
@@ -117,7 +117,7 @@ class PLS_Base(StackingProtocol):
             self.pls_close()
 
     def handle_close(self, packet):
-        print("RECEIVED A CLOSE MESSAGE")
+        # print("RECEIVED A CLOSE MESSAGE")
         self.transport.close()
 
     def pls_close(self):
@@ -137,7 +137,7 @@ class PLS_Base(StackingProtocol):
         self.transport.write(packet.__serialize__())
 
     def encrypt_data(self, data):
-        print("encrypt")
+        # print("encrypt")
         return self.data_encryptor.update(data)
 
     def decrypt_data(self, data):
@@ -154,7 +154,7 @@ class PLS_Base(StackingProtocol):
         try:
             temp.verify(mac)
         except cryptography.exceptions.InvalidSignature as e:
-            print(e)
+            # print(e)
             return False
         return True
 
@@ -174,7 +174,7 @@ class PLS_Base(StackingProtocol):
                     past_cert = crypto.load_certificate(crypto.FILETYPE_PEM, certs[i])
                     past_subject = self.get_cert_subject(past_cert)
                     if self.transport.get_extra_info('peername')[0] != past_subject:
-                        print("----------------------------Host Cert Does Not Match Connection Address----------------------------")
+                        # print("----------------------------Host Cert Does Not Match Connection Address----------------------------")
                         return False
                     past_issuer = self.get_cert_issuer(past_cert)
                     past_cert = past_cert.to_cryptography()
@@ -196,7 +196,7 @@ class PLS_Base(StackingProtocol):
                 past_issuer = current_issuer
                 past_subject = current_subject
         except cryptography.exceptions.InvalidSignature as e:
-            print("----------------------Invalid Signature----------------------")
+            # print("----------------------Invalid Signature----------------------")
             return False
         return True
 
@@ -216,13 +216,13 @@ class PLS_Base(StackingProtocol):
         subject = subject.split('.')
         issuer = issuer.split('.')
         if len(subject) - 1 != len(issuer) and len(subject) != len(issuer):
-            print("----------------------Fail IP subset 1----------------------")
-            print("Size doesn't match")
+            # print("----------------------Fail IP subset 1----------------------")
+            # print("Size doesn't match")
             return False
         for i in range(min(len(subject), len(issuer))):
             if subject[i] != issuer[i]:
-                print("----------------------Fail IP subset 2----------------------")
-                print("Bad subset")
+                # print("----------------------Fail IP subset 2----------------------")
+                # print("Bad subset")
                 return False
         return True
 
@@ -236,7 +236,7 @@ class PLS_Transport(StackingTransport):
         self.transport = self._lowerTransport
 
     def write(self, data):
-        print("pls transport write")
+        # print("pls transport write")
         self.protocol.transmit_data(data)
 
     def close(self):

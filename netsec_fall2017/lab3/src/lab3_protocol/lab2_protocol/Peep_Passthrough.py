@@ -31,7 +31,7 @@ class PEEP_Client(PEEP_Base):
 
     def start_handshake(self):
         self.sequence_number = random.randint(0,2**16)
-        print("peep_client: start handshake")
+        # print("peep_client: start handshake")
         packet = PEEPPacket()
         packet.Type = PEEPPacket.SYN
         packet.Data = "piggyback".encode()
@@ -57,7 +57,7 @@ class PEEP_Server(PEEP_Base):
         super().__init__()
 
     def connection_made(self,transport):
-        print("peep_server: connection made")
+        # print("peep_server: connection made")
         self.transport = transport
         self.higherProtocol().transport = PEEP_Transport(transport, self)
         self.deserializer = PEEPPacket.Deserializer()
@@ -67,8 +67,8 @@ class PEEP_Server(PEEP_Base):
 
     def handle_ack(self,packet):
         if self.state == PEEP_Server.HANDSHAKE:
-                print('peep_server: handshake is complete')
-                print("ack: ", packet.Acknowledgement)
+                # print('peep_server: handshake is complete')
+                # print("ack: ", packet.Acknowledgement)
                 # send data
                 self.state = PEEP_Server.TRANS
                 self.sequence_number = packet.Acknowledgement

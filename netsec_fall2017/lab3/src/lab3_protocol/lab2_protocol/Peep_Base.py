@@ -33,7 +33,7 @@ class PEEP_Base(StackingProtocol):
         self.piggyback = False
 
     def data_received(self, data):
-        print("data received")
+        # print("data received")
         self.deserializer.update(data)
         for packet in self.deserializer.nextPackets():
             if isinstance(packet, PEEPPacket) and packet.verifyChecksum():
@@ -42,31 +42,31 @@ class PEEP_Base(StackingProtocol):
     def handle_packets(self, packet):
         typenum = packet.Type
         if typenum == PEEPPacket.SYN and self.state == PEEP_Base.INIT:
-            print('received SYN')
+            # print('received SYN')
             self.handle_syn(packet)
         elif typenum == PEEPPacket.SYNACK and self.state == PEEP_Base.HANDSHAKE:
-            print('received SYNACK')
+            # print('received SYNACK')
             self.handle_synack(packet)
         elif typenum == PEEPPacket.ACK:
-            print("received ACK")
+            # print("received ACK")
             self.handle_ack(packet)
         elif typenum == PEEPPacket.DATA and (self.state == PEEP_Base.TRANS or self.state == PEEP_Base.TEARDOWN):
-            print('received Data')
+            # print('received Data')
             self.handle_data(packet)
         elif typenum == PEEPPacket.RIP and (self.state == PEEP_Base.TRANS or self.state == PEEP_Base.TEARDOWN):
-            print('received RIP')
+            # print('received RIP')
             self.handle_rip(packet)
         elif typenum == PEEPPacket.RIPACK and self.state == PEEP_Base.TEARDOWN:
-            print('received RIPACK')
+            # print('received RIPACK')
             self.handle_ripack(packet)
         else:
             print('received packet in bad state. type: ', typenum, " state ", self.state)
 
     def handle_syn(self, packet):
-        print('checksum of SYN is correct')
+        # print('checksum of SYN is correct')
         packetback = PEEPPacket()
         if packet.Data != FIELD_NOT_SET and packet.Data.decode() == "piggyback":
-            print("syn: enable piggybacking")
+            # print("syn: enable piggybacking")
             packetback.Data = "piggyback".encode()
             self.piggyback = True
         packetback.Acknowledgement = packet.SequenceNumber + 1
@@ -81,10 +81,10 @@ class PEEP_Base(StackingProtocol):
         self.send_packet(packetback)
         self.state = PEEP_Base.HANDSHAKE
         # maybe set this state to trans in case the ack in handshake gets dropped
-        print('sent SYNACK')
+        # print('sent SYNACK')
 
     def handle_synack(self, packet):
-        print("Received synack", packet)
+        # print("Received synack", packet)
         if packet.Acknowledgement != self.sequence_number:
             return
         i = 0
@@ -96,7 +96,7 @@ class PEEP_Base(StackingProtocol):
                 i -= 1
             i += 1
         if packet.Data != FIELD_NOT_SET and packet.Data.decode() == "piggyback":
-            print("synack: enable piggybacking")
+            # print("synack: enable piggybacking")
             self.piggyback = True
         packet_to_send = PEEPPacket()
         packet_to_send.Type = PEEPPacket.ACK
@@ -109,11 +109,11 @@ class PEEP_Base(StackingProtocol):
         self.send_window_start = self.base_sequence_number
         self.send_window_end = self.base_sequence_number
         self.sequence_number = self.base_sequence_number
-        print("Sending Back Ack")
+        # print("Sending Back Ack")
         self.send_packet(packet_to_send)
         self.state = PEEP_Base.TRANS # transmission state
         # Open upper layer transport
-        print("connection_made to higher protocol")
+        # print("connection_made to higher protocol")
         self.higherProtocol().connection_made(PEEP_Transport(self.transport, self))
 
     def handle_ack(self, packet):
@@ -121,7 +121,7 @@ class PEEP_Base(StackingProtocol):
         if self.piggyback and packet.Data != FIELD_NOT_SET and len(packet.Data) > 0:
             self.handle_data(packet)
         self.acknowledgement = packet.Acknowledgement
-        print("ack: ", packet.Acknowledgement)
+        # print("ack: ", packet.Acknowledgement)
         i = 0
         while i < len(self.timers):
             timer = self.timers[i]
@@ -160,8 +160,8 @@ class PEEP_Base(StackingProtocol):
         ack_packet.Acknowledgement = self.expected_sequence_number
         ack_packet.Type = PEEPPacket.ACK
         ack_packet.updateChecksum()
-        print("sending ack")
-        print("ack: ", self.expected_sequence_number)
+        # print("sending ack")
+        # print("ack: ", self.expected_sequence_number)
         self.send_packet(ack_packet)
 
         if self.state == PEEP_Base.TEARDOWN and self.received_all():
@@ -193,27 +193,27 @@ class PEEP_Base(StackingProtocol):
     def transmit_data(self, data):
         self.data += data
         self.data_size += len(data)
-        print("transmitting data size: ", self.data_size)
+        # print("transmitting data size: ", self.data_size)
         self.send_window_data()
 
     def send_window_data(self):
-        print('send window data')
+        # print('send window data')
         while self.send_window_end - self.send_window_start < self.window_size * self.chunk_size:
             if self.sequence_number - self.base_sequence_number >= self.data_size:
-                print("all bytes have been sent from me")
+                # print("all bytes have been sent from me")
                 return
             self.send_next_chunk()
-        print("end send window data")
+        # print("end send window data")
 
     def send_next_chunk(self):
-        print('send next chunk')
+        # print('send next chunk')
         packet = PEEPPacket()
         i = self.sequence_number - self.base_sequence_number
         packet.Type = PEEPPacket.DATA
         packet.SequenceNumber = self.sequence_number
         packet.Data = self.data[i:min(i+self.chunk_size, self.send_window_start + self.window_size * self.chunk_size)]
         packet.updateChecksum()
-        print("sending: " , packet.SequenceNumber)
+        # print("sending: " , packet.SequenceNumber)
         self.send_packet(packet)
         self.sequence_number += len(packet.Data)
         self.send_window_end += len(packet.Data)
@@ -227,7 +227,7 @@ class PEEP_Base(StackingProtocol):
         asyncio.get_event_loop().stop()
 
     def send_packet(self, packet):
-        print(self, "send packet: ", packet)
+        # print(self, "send packet: ", packet)
         self.transport.write(packet.__serialize__())
         if packet.Type != PEEPPacket.SYN and packet.Type != PEEPPacket.DATA and packet.Type != PEEPPacket.RIP:
             return
@@ -236,7 +236,7 @@ class PEEP_Base(StackingProtocol):
         timer.start()
 
     def initiate_teardown(self):
-        print('teardown start')
+        # print('teardown start')
         self.state = PEEP_Base.TEARDOWN
         if self.sent_all():
             self.send_rip()
@@ -256,7 +256,7 @@ class PEEP_Base(StackingProtocol):
             self.send_rip_ack(self.rip_sequence_number + 1)
 
     def send_rip(self):
-        print("send rip :", self)
+        # print("send rip :", self)
         rip = PEEPPacket(Type=PEEPPacket.RIP)
         rip.SequenceNumber = self.sequence_number
         self.sequence_number += 1
@@ -286,7 +286,7 @@ class PEEP_Transport(StackingTransport):
         self.transport = self._lowerTransport
 
     def write(self, data):
-        print("peep transport write")
+        # print("peep transport write")
         self.protocol.transmit_data(data)
 
     def close(self):

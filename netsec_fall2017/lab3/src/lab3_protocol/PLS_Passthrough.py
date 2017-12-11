@@ -77,7 +77,7 @@ class PLS_Client(PLS_Base):
         try:
             self.pks = self.my_priv_key.decrypt(packet.PreKey, oaep)
         except ValueError as e:
-            print(e)
+            # print(e)
             self.pls_close()
             return
         hsdone_packet = PlsHandshakeDone()
@@ -141,7 +141,7 @@ class PLS_Server(PLS_Base):
         try:
             self.pkc = self.my_priv_key.decrypt(packet.PreKey, oaep)
         except ValueError as e:
-            print(e)
+            # print(e)
             self.pls_close()
             return
         hsdone_packet = PlsHandshakeDone()
