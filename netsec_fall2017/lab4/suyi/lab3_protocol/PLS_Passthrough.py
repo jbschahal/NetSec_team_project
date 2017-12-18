@@ -102,7 +102,8 @@ class PLS_Client(PLS_Base):
         server_cipher = Cipher(algorithms.AES(self.eks), modes.CTR(self.ivs), backend=default_backend())
         self.data_encryptor = cli_cipher.encryptor()
         self.data_decryptor = server_cipher.decryptor()
-        self.mac_creator = hmac.HMAC(self.mkc, hashes.SHA1(), backend=default_backend())
+        #self.mac_creator = hmac.HMAC(self.mkc, hashes.SHA1(), backend=default_backend())
+        self.mac_creator = hmac.HMAC(self.mks, hashes.SHA1(), backend=default_backend())
         self.mac_verifier = hmac.HMAC(self.mks, hashes.SHA1(), backend=default_backend())
         self.higherProtocol().connection_made(PLS_Transport(self.transport, self))
 

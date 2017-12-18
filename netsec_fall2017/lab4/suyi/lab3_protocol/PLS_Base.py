@@ -158,6 +158,7 @@ class PLS_Base(StackingProtocol):
     def create_mac(self, data):
         temp = self.mac_creator.copy()
         temp.update(data)
+        #temp.update()
         return temp.finalize()
 
     def verify_mac(self, data, mac):

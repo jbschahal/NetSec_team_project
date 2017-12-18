@@ -1,0 +1,11 @@
+20174.1.1337.3 1
+20174.1.1337.4 1
+20174.1.1337.5 1
+They all give back opensession response before
+I corrupt PLS packets
+
+Try change messages_hash to not to include m3
+Try change the Mac of the data packet sent to None
+Try corrupt the mac_creator by using MKs as keys:
+    20174.1.1337.4 with port 1 didn't check and
+    gave back the response from application layer.

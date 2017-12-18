@@ -222,7 +222,6 @@ class SandboxedProc(object):
         while True:
             try:
                 fnname = read_message(child_stdout)
-                print("sandlib fname: ", fnname)
                 args   = read_message(child_stdout)
             except EOFError as e:
                 break
