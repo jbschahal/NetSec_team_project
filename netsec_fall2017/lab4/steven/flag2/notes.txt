@@ -1,0 +1,21 @@
+MC Servers:
+
+20174.1.5810.1: saw getstatus and responses going to and coming from here
+20174.1.1994.2: team 3
+20174.1.666.1: team 4
+20174.1.9596.2: team 6
+20174.1.12646.1: team 7
+20174.1.6666.1: team 9
+20174.1.12321.666: team 12
+20174.1.5180.1: team 13
+20174.1.1337.1: seems like the ParallelTSP broker//online bank
+20174.1.1337.2: seth servers
+20174.1.1337.3: seth servers
+20174.1.1337.4: seth servers
+20174.1.1337.5: seth servers
+20174.1.1337.6: seth servers
+
+FLAG 2:
+the vulnerable mobile code server is 20174.1.1337.3:1
+the address we pretended to be was 20174.1.22.1
+the cert chain we used was flag2.crt, my.crt, root.crt

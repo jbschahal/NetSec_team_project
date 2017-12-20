@@ -1,0 +1,16 @@
+Goal:
+Try to initiate a session with a server without having the private key.
+
+
+Flag 3:
+Server 20174.1.1337.6 is using the same PreKey:
+b'\x98\xb8\xa4j\xd3\xf4\xe9\x18\xf5\xa0r\xa8\xe2\xb3\x8eW'
+
+How the exploit works:
+We pretend to be one of seth's servers. We pick 20174.1.1337.4 to impersonate.
+We perform a normal handshake with this server in order to get the right certificates.
+Once we get the certificates, we create a fake vnic, then send those certificates to
+20174.1.1337.6. We continue as normal, but since we do not have the key for the PKs
+sent to us, we use the value above as the PKs since we expect it to be the same.
+
+

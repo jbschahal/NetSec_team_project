@@ -1,0 +1,9 @@
+server 20174.1.1337.6 running on python
+
+modify the ParallelTSP_mobile code to create a txt file on remote machine
+
+running ParellelTSP program, it seems like some issues
+with keyexchange process
+
+
+still need tests..

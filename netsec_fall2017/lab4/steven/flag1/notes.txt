@@ -1,0 +1,17 @@
+Server that doesn't communicate using PLS: 20174.1.1337.2
+ParallelTSP communicates with this server by just sending GetMobileCodeStatus
+using a different port number everytime.
+
+We want to detect these messages and send false responses.
+
+TODO:
+
+Write a demux that will listen on traffic going from
+20174.1.1337.1 to 20174.1.1337.2
+
+Check to see that it is a GetMobileCodeStatus packet.
+- get the cookie number
+If it is, send back a GetMobileCodeStatusResponse packet
+- use the same cookie number
+- set complete to be True
+- set the runtime to be arbitrary

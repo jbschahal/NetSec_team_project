@@ -1,0 +1,10 @@
+
+when running Parellel, server will sent a opensession pakcet to bank.
+catch Opensession Packets
+print username and passwordhash
+
+hardcode passwd into Onlinebank.py
+
+crack account
+
+
