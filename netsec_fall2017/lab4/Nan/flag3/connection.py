@@ -1,10 +1,11 @@
 import playground
 import asyncio
 import lab3_protocol
-from playground.common import logging as p_logging
-p_logging.EnablePresetLogging(p_logging.PRESET_TEST)
+import logging
 
-class flag3(asyncio.Protocol):
+
+
+class app(asyncio.Protocol):
     def __init__(self):
         self.transport=None
     def connection_made(self,transport):
@@ -20,7 +21,7 @@ class flag3(asyncio.Protocol):
 
 if __name__=='__main__':
     loop = asyncio.get_event_loop()
-    coro = playground.getConnector("pls3").create_playground_connection(flag3,"20174.1.1337.4",1)
+    coro = playground.getConnector("plcs").create_playground_connection(app(),"20174.1.1337.3",1)
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()

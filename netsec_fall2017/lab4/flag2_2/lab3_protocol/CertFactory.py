@@ -38,11 +38,11 @@ def getPrivateKeyForAddr(addr):
     return private_key_user.encode()
 
 def getCertsForAddr(addr):
-    addr1 = cert_dict[addr]
+    #addr1 = cert_dict[addr]
     #addr1 = cert_dict["20174.1.22.1"]
-    #addr1 = None
-    #addr2 = None
-    addr2 = cert_dict["20174.1.11.1"]
+    addr1 = None
+    addr2 = None
+    #addr2 = cert_dict["20174.1.11.1"]
     with open(addr1) as fp:
         certs_user1 = fp.read()
     with open(addr2) as fp:

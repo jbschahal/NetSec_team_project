@@ -14,7 +14,7 @@ Connect to a mobile code server which has incorrect certificate checking
 
 Steps:
 
-    try handshaking each server multiple times
+    try handshaking each server multiple times with empty certs
     Find which server could execute handshake successfully
 """
 

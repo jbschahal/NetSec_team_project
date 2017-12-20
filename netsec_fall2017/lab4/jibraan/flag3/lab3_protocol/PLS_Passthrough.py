@@ -42,16 +42,15 @@ class PLS_Client(PLS_Base):
     def connection_made(self, transport):
         super().connection_made(transport)
         self.address, self.port = transport.get_extra_info("sockname")
-        print("********************************************************************************8")
+        print("--------++++++++++ ADDRESS ++++++++----------")
         print(self.address)
-        self.my_priv_key = serialization.load_pem_private_key(\
-            CertFactory.getPrivateKeyForAddr(self.address),\
-            password = None,\
-            backend = default_backend())
+        print("-------------+++++++++++++----------------")
+        #self.my_priv_key = serialization.load_pem_private_key(CertFactory.getPrivateKeyForAddr(self.address), password = None, backend = default_backend())
+        self.my_priv_key = None
         self.start_handshake()
 
     def start_handshake(self):
-        print("---------------------PLS Start Handshake---------------------")
+        print("---------------------PLS +++Start Handshake---------------------")
         cli_hello = PlsHello()
         self.client_nonce = random.getrandbits(64)
         cli_hello.Nonce = self.client_nonce
@@ -62,7 +61,14 @@ class PLS_Client(PLS_Base):
         self.state = PLS_Base.HELLO
 
     def handle_hello(self, packet):
-        print(packet)
+        """
+        ## Saving the certificates
+        for i in range(len(packet.Certs)):
+            f = open("cert_flag3_" + str(i) + ".cert","w")
+            f.write(packet.Certs[i].decode())
+            f.close()
+        ## --end
+        """
         self.m2 = packet.__serialize__()
         if not self.verify_certificate_chain(packet.Certs):
             self.pls_close()
@@ -79,14 +85,18 @@ class PLS_Client(PLS_Base):
     def handle_keyexch(self, packet):
         print(packet)
         self.m4 = packet.__serialize__()
-        try:
-            self.pks = self.my_priv_key.decrypt(packet.PreKey, oaep)
-        except ValueError as e:
+
+        self.pks = b'\x98\xb8\xa4j\xd3\xf4\xe9\x18\xf5\xa0r\xa8\xe2\xb3\x8eW'
+       # """
+        #try:
+         #   self.pks = self.my_priv_key.decrypt(packet.PreKey, oaep)
+        #except ValueError as e:
             # print(e)
-            self.pls_close()
-            return
-        print("----------PLS DECRYPTED PKS----------")
-        print(self.pks)
+            #self.pls_close()
+            #return
+        #print("----------PLS DECRYPTED PKS----------")
+        #print(self.pks)
+       # """
         hsdone_packet = PlsHandshakeDone()
         messages_hash = hashlib.sha1()
         messages_hash.update(self.m1)

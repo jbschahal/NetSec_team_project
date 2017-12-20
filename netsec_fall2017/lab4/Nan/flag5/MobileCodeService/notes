@@ -1,0 +1,1 @@
+p = subprocess.Popen(["python3", "~/NetSec_TeamProject/netsec_fall2017/lab4/sandbox/sandbox/pypy/sandbox/pypy_interact.py",  "--tmp=tmp/", "~/NetSec_TeamProject/netsec_fall2017/lab4/sandbox/sandbox/pypy/sandbox/pypy3-c-sandbox", "-S", f.name], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
